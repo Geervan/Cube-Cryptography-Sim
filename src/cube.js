@@ -144,9 +144,9 @@ export class CubeSimulator {
         let seedNum = 0;
         for (let i = 0; i < seed.length; i++) seedNum += seed.charCodeAt(i);
 
-        // Pool: A-Z (26) + a-z (26) = 52. 
-        // Cube has 54 stickers. We need 2 fillers. Let's reuse A, B.
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzAB"; // 54 chars
+        // Pool: A-Z (26) + a-z (26) + space (1) = 53. 
+        // Cube has 54 stickers. We need 1 filler. Let's reuse A.
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz A"; // 54 chars
         let pool = chars.split('');
 
         // Shuffle pool deterministically based on seed

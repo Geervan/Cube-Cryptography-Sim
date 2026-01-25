@@ -29,6 +29,7 @@ function getCharMove(char) {
 
 // Character mapping helpers (Modulo 52: A-Z, a-z)
 function toIndex(c) {
+  if (c === ' ') return 52;
   const code = c.charCodeAt(0);
   if (code >= 65 && code <= 90) return code - 65; // A-Z -> 0-25
   if (code >= 97 && code <= 122) return code - 97 + 26; // a-z -> 26-51
@@ -36,6 +37,7 @@ function toIndex(c) {
 }
 
 function fromIndex(i) {
+  if (i === 52) return ' ';
   if (i <= 25) return String.fromCharCode(i + 65); // 0-25 -> A-Z
   return String.fromCharCode(i - 26 + 97); // 26-51 -> a-z
 }
@@ -110,9 +112,9 @@ btnAction.addEventListener('click', () => {
   }
 });
 
-function runEncryption() { // Filter: Keep only A-Z, a-z
+function runEncryption() { // Filter: Keep only A-Z, a-z, space
   const raw = elDataInput.value;
-  const data = raw.replace(/[^A-Za-z]/g, '');
+  const data = raw.replace(/[^A-Za-z ]/g, '');
 
   if (data.length !== raw.length) {
     // Warn user?
@@ -156,11 +158,11 @@ function runEncryption() { // Filter: Keep only A-Z, a-z
       // 3. Read Sensor
       const sensorVal = cube.getSensorValue();
 
-      // 4. Encrypt: Modulo 52 (A-Z, a-z)
+      // 4. Encrypt: Modulo 53 (A-Z, a-z, space)
       const k = toIndex(sensorVal);
       const p = toIndex(pChar);
 
-      const cVal = (p + k) % 52;
+      const cVal = (p + k) % 53;
       const cChar = fromIndex(cVal);
 
       // 5. Update Output & State
@@ -179,7 +181,7 @@ function runEncryption() { // Filter: Keep only A-Z, a-z
       document.getElementById('disp-result').innerText = cChar;
       document.getElementById('disp-result-code').innerText = `IDX ${cVal}`;
 
-      document.getElementById('disp-math').innerText = `(${p} + ${k}) % 52 = ${cVal}`;
+      document.getElementById('disp-math').innerText = `(${p} + ${k}) % 53 = ${cVal}`;
 
       index++;
       // 6. Loop
@@ -196,7 +198,7 @@ function runEncryption() { // Filter: Keep only A-Z, a-z
 
 function runDecryption() {
   const raw = elDataInput.value;
-  const data = raw.replace(/[^A-Za-z]/g, ''); // Filter
+  const data = raw.replace(/[^A-Za-z ]/g, ''); // Filter
   if (!data) return;
 
   // Reset
@@ -230,13 +232,13 @@ function runDecryption() {
       // 2. Read Sensor (Should match sender's K)
       const sensorVal = cube.getSensorValue();
 
-      // 3. Decrypt: P = (C - K) (Modulo 52)
+      // 3. Decrypt: P = (C - K) (Modulo 53)
       const k = toIndex(sensorVal);
       const c = toIndex(cChar);
 
       // Inverse Modulo: (C - K)
-      let pVal = (c - k) % 52;
-      if (pVal < 0) pVal += 52;
+      let pVal = (c - k) % 53;
+      if (pVal < 0) pVal += 53;
 
       const pChar = fromIndex(pVal);
 
@@ -255,7 +257,7 @@ function runDecryption() {
       document.getElementById('disp-result').innerText = pChar;
       document.getElementById('disp-result-code').innerText = `IDX ${pVal}`;
 
-      document.getElementById('disp-math').innerText = `(${c} - ${k}) % 52 = ${pVal}`;
+      document.getElementById('disp-math').innerText = `(${c} - ${k}) % 53 = ${pVal}`;
 
       index++;
       processNext();
