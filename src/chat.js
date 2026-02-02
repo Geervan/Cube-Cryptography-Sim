@@ -56,6 +56,9 @@ export class CubeChat {
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun1.l.google.com:19302' },
                     { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
                 ]
             }
         };
@@ -74,7 +77,11 @@ export class CubeChat {
         });
 
         this.peer.on('connection', (conn) => {
-            if (this.conn) { conn.close(); return; } // Single peer only
+            // Allow multiple attempts, but close old ones if replacing
+            if (this.conn) {
+                this.logSystem("New connection replacing old one...");
+                this.conn.close();
+            }
             this.handleConnection(conn, true); // true = I am the receiver
         });
 
@@ -85,8 +92,17 @@ export class CubeChat {
 
     connectTo(peerId) {
         if (!peerId) return;
+
+        // Sanitize ID
+        peerId = peerId.trim();
+
         this.logSystem(`Connecting to ${peerId}...`);
-        const conn = this.peer.connect(peerId);
+
+        const conn = this.peer.connect(peerId, {
+            reliable: true,
+            serialization: 'json'
+        });
+
         this.handleConnection(conn, false); // false = I am the initiator
     }
 
