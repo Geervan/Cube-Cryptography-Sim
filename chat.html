@@ -65,11 +65,16 @@
             font-family: 'IBM Plex Mono';
             font-size: 0.8rem;
             margin-bottom: 5px;
-            color: #888;
+            color: #ff4444;
+            /* Default: Disconnected Red */
+            text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+            transition: color 0.3s ease;
         }
 
         .conn-status.connected {
             color: #00ff88;
+            /* Connected Green */
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
         }
 
         .id-pill {

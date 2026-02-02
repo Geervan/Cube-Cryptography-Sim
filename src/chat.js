@@ -48,7 +48,24 @@ export class CubeChat {
     }
 
     init() {
-        this.peer = new Peer(null, { debug: 1 });
+        const config = {
+            debug: 2,
+            secure: true,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                ]
+            }
+        };
+
+        try {
+            this.peer = new Peer(null, config);
+        } catch (e) {
+            this.logSystem("Critical PeerJS Error: " + e.message);
+            return;
+        }
 
         this.peer.on('open', (id) => {
             this.myId = id;
