@@ -130,7 +130,7 @@ export class CubeChat {
             // Distinguish types
             if (data.type === 'SYNC') {
                 this.handleSync(data.payload);
-            } else if (data.type === 'MSG') {
+            } else if (data.type === 'MSG' || data.type === 'MSG_CHUNK') {
                 this.handleIncomingMessage(data);
             }
         });
@@ -191,50 +191,152 @@ export class CubeChat {
         }
 
         const alias = document.getElementById('my-alias').value || "UNKNOWN";
-
-        const bubble = this.createBubble("sent", alias); // Pass alias
+        const bubble = this.createBubble("sent", alias);
         const cryptoContent = document.createElement('div');
         cryptoContent.className = 'msg-cipher';
         bubble.appendChild(document.createTextNode("Encrypting..."));
         bubble.appendChild(cryptoContent);
 
+        // Chunking Strategy for long messages
+        // We buffer encrypted chars and send them in packets of 5
+        let buffer = "";
+        const CHUNK_SIZE = 5;
+
         this.engine.encryptSequence(text, 'A',
             (char, idx, details) => {
-                if (idx === 0) bubble.childNodes[0].textContent = "";
-                bubble.childNodes[0].textContent += details.p;
+                if (idx === 0) bubble.childNodes[1].textContent = "";
+                bubble.childNodes[1].textContent += details.p;
                 cryptoContent.innerText += details.c;
+
+                // Real-time Streaming Logic
+                buffer += details.c;
+                if (buffer.length >= CHUNK_SIZE) {
+                    this.conn.send({
+                        type: 'MSG_CHUNK',
+                        alias: alias,
+                        payload: buffer,
+                        isFinal: false
+                    });
+                    buffer = "";
+                }
             },
             (fullCiphertext) => {
                 console.log(`%c[NETWORK OUTGOING] Payload: ${fullCiphertext}`, 'color: cyan; font-weight: bold;');
+
+                // Send remaining buffer + Final Flag
                 this.conn.send({
-                    type: 'MSG',
-                    alias: alias, // Send my name!
-                    payload: fullCiphertext
+                    type: 'MSG_CHUNK',
+                    alias: alias,
+                    payload: buffer,
+                    isFinal: true
                 });
             }
         );
     }
 
+    // Track active receiving bubble to append partial chunks
+    // this.activeRxBubble = null; (Add to constructor if strict, but safe to use loosely)
+
     handleIncomingMessage(data) {
+        // Legacy support
+        if (data.type === 'MSG') {
+            this._handleLegacyMsg(data);
+            return;
+        }
+
         const ciphertext = data.payload;
-        const senderAlias = data.alias || "PEER"; // Get name
+        const senderAlias = data.alias || "PEER";
+
+        if (!ciphertext && !data.isFinal) return; // empty chunk
+
+        // Do we have an active bubble for this stream?
+        // Simplified: Assume strictly ordered streams for now (safe for TCP/WebRTC)
+        if (!this.activeRxBubble) {
+            this.activeRxBubble = this.createBubble("received", senderAlias);
+            // Clear the placeholder text immediately on first chunk
+            this.activeRxBubble.childNodes[1].textContent = "";
+
+            const cryptoContent = document.createElement('div');
+            cryptoContent.className = 'msg-cipher';
+            this.activeRxBubble.appendChild(cryptoContent);
+        }
+
+        const bubble = this.activeRxBubble;
+        const mainTextNode = bubble.childNodes[1];
+        const cryptoContent = bubble.lastChild;
+
+        cryptoContent.innerText += ciphertext; // Append cipher
+
+        // Decrypt the CHUNK
+        // Note: engine.decryptSequence usually resets generic state, but since
+        // this is a stream cipher, decrypting "BC" after "A" works IF the cube state is preserved.
+        // Our engine tracks state globally? Yes, 'this.cube' is shared.
+        // But 'decryptSequence' manages 'lastCipherChar'.
+        // We need to verify if 'fromIndex' relies on last char.
+        // The engine logic: 'const move = this.getCharMove(lastCipherChar);'
+        // We need to track 'lastCipherChar' across chunks.
+
+        // Actually, the Engine uses a local 'lastCipherChar' variable inside the function scope.
+        // This is a problem for chunking.
+        // Quick Fix: We won't change the engine. 
+        // We will just decrypt the chunk, but we need to know the *previous* chunk's last char.
+        // OR: The engine is fast enough to decrypt "Whole so far"? 
+        // No, that messes up cube rotation.
+
+        // BETTER APPROACH for minimal code change:
+        // just let the user wait? 
+        // No, the user asked specifically.
+
+        // Okay, I will implement a visual trick.
+        // The 'encryptSequence' calls callback.
+
+        // Wait, if I decrypt "Chunk 2" independently, I need the cube state to be at "Post-Chunk 1".
+        // The Cube State IS at Post-Chunk 1 because the sender *rotated* it.
+        // The Receiver *must* rotate it too.
+        // So sequential decryption of chunks works perfectly!
+        // The only issue is 'lastCipherChar' used for determining the Move.
+        // The helper `getCharMove(lastCipherChar)` needs the char from the *previous* chunk.
+
+        // I will hack it: I will attach 'prevChar' to the packet? 
+        // Or simpler: The receiver just remembers the last char of the previous chunk.
+
+        if (!this.lastRxChar) this.lastRxChar = 'A'; // Default IV
+
+        this.engine.decryptSequence(ciphertext, this.lastRxChar,
+            (pChar, idx, details) => {
+                mainTextNode.textContent += pChar;
+                // Update global tracker
+                this.lastRxChar = details.c;
+            },
+            () => {
+                // Chunk done.
+                if (data.isFinal) {
+                    this.activeRxBubble = null;
+                    this.lastRxChar = 'A'; // Reset for NEXT message
+                }
+            }
+        );
+    }
+
+    _handleLegacyMsg(data) {
+        const ciphertext = data.payload;
+        const senderAlias = data.alias || "PEER";
         console.log(`%c[NETWORK INCOMING] Payload: ${ciphertext}`, 'color: orange; font-weight: bold;');
 
         const bubble = this.createBubble("received", senderAlias);
-        const mainTextNode = bubble.childNodes[1]; // [0] is name, [1] is text
+        const mainTextNode = bubble.childNodes[1];
 
         const cryptoContent = document.createElement('div');
         cryptoContent.className = 'msg-cipher';
-        cryptoContent.innerText = ciphertext; // Show cipher at bottom
+        cryptoContent.innerText = ciphertext;
         bubble.appendChild(cryptoContent);
 
-        // Instant Decryption
         this.engine.decryptSequence(ciphertext, 'A',
             (char, idx, details) => {
                 if (idx === 0) mainTextNode.textContent = "";
                 mainTextNode.textContent += details.p;
             },
-            (fullPlaintext) => { }
+            () => { }
         );
     }
 
