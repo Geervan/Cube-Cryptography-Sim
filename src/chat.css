@@ -1,0 +1,235 @@
+/* Chat Panel - Replaces Right Panel essentially */
+#mode-chat {
+    display: none;
+    flex-direction: column;
+    width: 380px;
+    /* Match standard panel width or slightly wider */
+    min-width: 350px;
+    background: rgba(18, 18, 20, 0.95);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+    z-index: 10;
+}
+
+#mode-chat.active {
+    display: flex;
+}
+
+/* Header Tweaks */
+#mode-chat .panel-header h2 {
+    color: #00ff88;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+/* Connection Status Block */
+.chat-status-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.label-small {
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.label-tiny {
+    font-size: 0.65rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+/* Unique ID Display */
+.id-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.05);
+    padding: 0.5rem;
+    border: 1px dashed rgba(0, 255, 136, 0.3);
+    border-radius: 4px;
+    cursor: copy;
+    word-break: break-all;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.id-display:hover {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: #00ff88;
+}
+
+/* Connect Input Row */
+.connection-row {
+    margin-top: 0.8rem;
+}
+
+.chat-input-area {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-input-area input {
+    flex-grow: 1;
+    background: #000;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 0.6rem;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    transition: border 0.2s;
+}
+
+.chat-input-area input:focus {
+    border-color: #00ff88;
+    outline: none;
+}
+
+#btn-connect {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
+    padding: 0 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#btn-connect:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* Warning Banner */
+.key-monitor {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #ff3b30;
+    margin-bottom: 1rem;
+    background: rgba(255, 59, 48, 0.1);
+    /* Red tint */
+    padding: 0.4rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 59, 48, 0.2);
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* Chat Log */
+.chat-log {
+    flex-grow: 1;
+    background: #0a0a0c;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+/* Scrollbar for chat log */
+.chat-log::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-log::-webkit-scrollbar-track {
+    background: #000;
+}
+
+.chat-log::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+
+/* Messages */
+.msg {
+    max-width: 85%;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.msg.sent {
+    align-self: flex-end;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    color: #e0e0e0;
+    border-bottom-right-radius: 2px;
+}
+
+.msg.received {
+    align-self: flex-start;
+    background: #1a1a1d;
+    border: 1px solid #333;
+    color: #ccc;
+    border-bottom-left-radius: 2px;
+}
+
+.msg .cipher-preview {
+    font-size: 0.7rem;
+    color: #555;
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    /* Very subtle separator */
+    padding-top: 4px;
+}
+
+.msg.sent .cipher-preview {
+    color: rgba(0, 255, 136, 0.4);
+}
+
+.msg.system {
+    align-self: center;
+    background: transparent;
+    border: none;
+    color: #555;
+    font-size: 0.75rem;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 0;
+}
+
+/* Chat Input Bottom */
+#chat-msg-input {
+    height: 40px;
+}
+
+#btn-send {
+    height: 40px;
+    background: #00ff88;
+    color: #000;
+    font-weight: 600;
+    border: none;
+    padding: 0 1.5rem;
+}
+
+#btn-send:hover {
+    background: #00cc6a;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+}

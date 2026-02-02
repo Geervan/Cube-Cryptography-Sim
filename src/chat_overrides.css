@@ -1,0 +1,32 @@
+/* --- Chat Mode Overrides --- */
+
+/* When in Chat Mode, switch workspace to Flexbox to handle the full-width viewport + chat sidebar */
+.lab-workspace.chat-mode {
+    display: flex !important;
+    grid-template-columns: none;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+/* Hide standard panels in chat mode */
+.lab-workspace.chat-mode .left-panel,
+.lab-workspace.chat-mode .right-panel {
+    display: none !important;
+}
+
+/* Show Chat Panel in chat mode */
+.lab-workspace.chat-mode #mode-chat {
+    display: flex !important;
+    width: 380px;
+    flex-shrink: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure Viewport takes remaining space */
+.viewport {
+    flex: 1;
+    /* This ensures it grows in Felix/Grid */
+    min-width: 0;
+    /* Prevention of flex overflow */
+    position: relative;
+}

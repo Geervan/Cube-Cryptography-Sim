@@ -317,6 +317,10 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// --- CHAT MODULE INTEGRATION ---
+
+
+
 log("SYSTEM ONLINE. AWAITING INPUT.");
 updateHash();
 

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CUBE.CHAT</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #eee;
+            font-family: 'IBM Plex Sans', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Split Layout */
+        #view-cube {
+            flex: 1;
+            position: relative;
+            background: #08080a;
+        }
+
+        #view-chat {
+            width: 450px;
+            background: #121214;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Header */
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            background: #1a1a1e;
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-family: 'IBM Plex Mono';
+            font-size: 1.2rem;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Connection Box */
+        .conn-box {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 255, 136, 0.02);
+        }
+
+        .conn-status {
+            font-family: 'IBM Plex Mono';
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            color: #888;
+        }
+
+        .conn-status.connected {
+            color: #00ff88;
+        }
+
+        .id-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed #444;
+            padding: 8px;
+            font-family: 'IBM Plex Mono';
+            font-size: 0.85rem;
+            color: #ccc;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .id-pill:hover {
+            border-color: #00ff88;
+            color: #fff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        input {
+            flex: 1;
+            background: #000;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px;
+            font-family: 'IBM Plex Mono';
+        }
+
+        button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 0 15px;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono';
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #00ff88;
+            color: #000;
+        }
+
+        /* Chat Area */
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .msg {
+            max-width: 85%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+            color: #ddd;
+        }
+
+        .msg.sent {
+            align-self: flex-end;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-bottom-right-radius: 0;
+        }
+
+        .msg.received {
+            align-self: flex-start;
+            background: #222;
+            border: 1px solid #444;
+            border-bottom-left-radius: 0;
+        }
+
+        .msg-cipher {
+            display: block;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'IBM Plex Mono';
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .msg.system {
+            align-self: center;
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 0.8rem;
+        }
+
+        /* Footer */
+        .chat-footer {
+            padding: 20px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+            background: #1a1a1e;
+        }
+
+        /* Warning */
+        .warning-bar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            color: #ffaaaa;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-family: 'IBM Plex Mono';
+            font-size: 0.75rem;
+            pointer-events: none;
+            z-index: 5;
+            text-align: center;
+        }
+
+        /* Back Button */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            color: #666;
+            text-decoration: none;
+            font-family: 'IBM Plex Mono';
+            font-size: 0.8rem;
+            border: 1px solid #333;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .back-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .key-config {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .key-config input {
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            border: 1px solid #444;
+            background: #000;
+            color: #00ff88;
+            outline: none;
+            flex: 1;
+        }
+
+        .key-config button {
+            font-size: 0.7rem;
+            padding: 0 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="/" class="back-btn">&larr; BACK TO LAB</a>
+
+    <div id="view-cube">
+        <!-- Three.js Canvas -->
+    </div>
+
+    <div id="view-chat">
+        <div class="chat-header">
+            <h1>SECURE CHAT SIM</h1>
+            <div class="key-config">
+                <input type="text" id="my-key-input" placeholder="ENTER KEY" autocomplete="off"
+                    title="Shared Encryption Key">
+                <button id="btn-set-key">SET</button>
+            </div>
+        </div>
+
+        <div class="conn-box">
+            <div id="status-text" class="conn-status">DISCONNECTED</div>
+            <div id="my-id" class="id-pill" title="Click to copy">GENERATING ID...</div>
+
+            <!-- Identity Config -->
+            <div class="input-group" style="margin-bottom: 10px;">
+                <input type="text" id="my-alias" placeholder="Enter Your Name" spellcheck="false" autocomplete="off"
+                    style="width: 30%;">
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="target-id" placeholder="Peer ID to Connect..." spellcheck="false"
+                    autocomplete="off">
+                <button id="btn-connect">LINK</button>
+            </div>
+        </div>
+
+        <div id="chat-history" class="chat-history">
+            <div class="msg system">>> INITIALIZING SECURE ENVIRONMENT</div>
+        </div>
+
+        <div class="chat-footer">
+            <input type="text" id="msg-input" placeholder="Type encrypted message..." spellcheck="false"
+                autocomplete="off">
+            <button id="btn-send">SEND</button>
+        </div>
+    </div>
+
+    <script type="module" src="/src/chat_entry.js"></script>
+</body>
+
+</html>

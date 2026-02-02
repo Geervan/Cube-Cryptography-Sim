@@ -229,6 +229,9 @@ textarea:focus {
   line-height: 1.4;
 }
 
+@import './chat.css';
+@import './chat_overrides.css';
+
 /* Viewport */
 .viewport {
   position: relative;
