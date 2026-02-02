@@ -7,6 +7,7 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, 'index.html'),
                 lore: resolve(__dirname, 'lore.html'),
+                chat: resolve(__dirname, 'chat.html'),
             },
         },
     },
