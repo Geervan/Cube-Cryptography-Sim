@@ -192,20 +192,21 @@ export class CubeChat {
 
         const alias = document.getElementById('my-alias').value || "UNKNOWN";
         const bubble = this.createBubble("sent", alias);
+        const contentSpan = bubble.querySelector('.msg-content'); // Safer selector
         const cryptoContent = document.createElement('div');
         cryptoContent.className = 'msg-cipher';
-        bubble.appendChild(document.createTextNode("Encrypting..."));
+
+        contentSpan.textContent = "Encrypting...";
         bubble.appendChild(cryptoContent);
 
         // Chunking Strategy for long messages
-        // We buffer encrypted chars and send them in packets of 5
         let buffer = "";
         const CHUNK_SIZE = 5;
 
         this.engine.encryptSequence(text, 'A',
             (char, idx, details) => {
-                if (idx === 0) bubble.childNodes[1].textContent = "";
-                bubble.childNodes[1].textContent += details.p;
+                if (idx === 0) contentSpan.textContent = "";
+                contentSpan.textContent += details.p;
                 cryptoContent.innerText += details.c;
 
                 // Real-time Streaming Logic
@@ -253,8 +254,9 @@ export class CubeChat {
         // Simplified: Assume strictly ordered streams for now (safe for TCP/WebRTC)
         if (!this.activeRxBubble) {
             this.activeRxBubble = this.createBubble("received", senderAlias);
+            const contentSpan = this.activeRxBubble.querySelector('.msg-content');
             // Clear the placeholder text immediately on first chunk
-            this.activeRxBubble.childNodes[1].textContent = "";
+            contentSpan.textContent = "";
 
             const cryptoContent = document.createElement('div');
             cryptoContent.className = 'msg-cipher';
@@ -262,8 +264,8 @@ export class CubeChat {
         }
 
         const bubble = this.activeRxBubble;
-        const mainTextNode = bubble.childNodes[1];
-        const cryptoContent = bubble.lastChild;
+        const contentSpan = bubble.querySelector('.msg-content');
+        const cryptoContent = bubble.querySelector('.msg-cipher');
 
         cryptoContent.innerText += ciphertext; // Append cipher
 
@@ -304,7 +306,7 @@ export class CubeChat {
 
         this.engine.decryptSequence(ciphertext, this.lastRxChar,
             (pChar, idx, details) => {
-                mainTextNode.textContent += pChar;
+                contentSpan.textContent += pChar;
                 // Update global tracker
                 this.lastRxChar = details.c;
             },
@@ -324,7 +326,7 @@ export class CubeChat {
         console.log(`%c[NETWORK INCOMING] Payload: ${ciphertext}`, 'color: orange; font-weight: bold;');
 
         const bubble = this.createBubble("received", senderAlias);
-        const mainTextNode = bubble.childNodes[1];
+        const contentSpan = bubble.querySelector('.msg-content');
 
         const cryptoContent = document.createElement('div');
         cryptoContent.className = 'msg-cipher';
@@ -333,8 +335,8 @@ export class CubeChat {
 
         this.engine.decryptSequence(ciphertext, 'A',
             (char, idx, details) => {
-                if (idx === 0) mainTextNode.textContent = "";
-                mainTextNode.textContent += details.p;
+                if (idx === 0) contentSpan.textContent = "";
+                contentSpan.textContent += details.p;
             },
             () => { }
         );
@@ -353,7 +355,11 @@ export class CubeChat {
         nameTag.innerText = name;
         div.appendChild(nameTag);
 
-        div.appendChild(document.createTextNode("")); // Placeholder for text
+        // Content Span (The Plaintext)
+        const contentSpan = document.createElement('span');
+        contentSpan.className = 'msg-content';
+        div.appendChild(contentSpan);
+
         this.dom.log.appendChild(div);
         this.dom.log.scrollTop = this.dom.log.scrollHeight;
         return div;
