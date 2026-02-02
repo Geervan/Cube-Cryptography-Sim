@@ -193,6 +193,12 @@ export class CubeChat {
         this.clearTypingIndicator();
         this.lockInput(false);
 
+        // Remove the zombie bubble if it exists
+        if (this.activeBubble) {
+            this.activeBubble.remove();
+            this.activeBubble = null;
+        }
+
         // Only notify peer if I AM THE ONE who found it.
         // If I just received the warning, do not reply, or we loop forever.
         if (isInitiator) {
@@ -241,6 +247,8 @@ export class CubeChat {
         const alias = document.getElementById('my-alias').value || "UNKNOWN";
 
         const bubble = this.createBubble("sent", alias); // Pass alias
+        this.activeBubble = bubble; // Track for collision cleanup
+
         const cryptoContent = document.createElement('div');
         cryptoContent.className = 'msg-cipher';
         bubble.appendChild(document.createTextNode("Encrypting..."));
@@ -265,11 +273,12 @@ export class CubeChat {
             },
             (fullCiphertext) => {
                 this.isEncrypting = false; // Clear flag
+                this.activeBubble = null; // Clear reference
 
                 // Check if we crashed while encrypting
                 if (this.isCompromised) {
                     this.logSystem("ABORTED: Transmission Collision.");
-                    bubble.remove(); // Delete the ghost bubble
+                    // bubble removed via handleCollision already
                     this.lockInput(false);
                     return;
                 }

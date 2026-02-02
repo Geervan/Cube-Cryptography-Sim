@@ -89,6 +89,10 @@ export class CubeSimulator {
     }
 
     initCube(seedKey = "DEFAULT") {
+        // Clear Queue to stop any pending animations upon reset
+        this.animationQueue = [];
+        this.isAnimating = false;
+
         // Clear existing
         while (this.group.children.length > 0) {
             this.group.remove(this.group.children[0]);
@@ -306,6 +310,8 @@ export class CubeSimulator {
     }
 
     reset() {
+        this.animationQueue = [];
+        this.isAnimating = false;
         this.initCube();
     }
 
