@@ -184,7 +184,7 @@ export class CubeChat {
         div.style.color = '#ff4444';
         div.style.fontWeight = 'bold';
         div.style.textShadow = '0 0 5px rgba(255,0,0,0.5)';
-        div.innerText = "⚠ COLLISION DETECTED - RESETTING LINK ⚠";
+        div.innerText = "⚠ COLLISION DETECTED - PLEASE CLICK 'SET' TO RESYNC ⚠";
         this.dom.log.appendChild(div);
         this.dom.log.scrollTop = this.dom.log.scrollHeight;
 
