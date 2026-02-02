@@ -130,8 +130,15 @@ export class CubeChat {
             // Distinguish types
             if (data.type === 'SYNC') {
                 this.handleSync(data.payload);
-            } else if (data.type === 'MSG' || data.type === 'MSG_CHUNK') {
+            } else if (data.type === 'MSG') {
+                this.clearTypingIndicator(); // Msg arrived, clear indicator
+                this.lockInput(false); // Unlock input
                 this.handleIncomingMessage(data);
+            } else if (data.type === 'SIGNAL') {
+                if (data.payload === 'START_ENC') {
+                    this.showTypingIndicator();
+                    this.lockInput(true); // Found signal, lock input
+                }
             }
         });
 
@@ -191,154 +198,58 @@ export class CubeChat {
         }
 
         const alias = document.getElementById('my-alias').value || "UNKNOWN";
-        const bubble = this.createBubble("sent", alias);
-        const contentSpan = bubble.querySelector('.msg-content'); // Safer selector
+
+        const bubble = this.createBubble("sent", alias); // Pass alias
         const cryptoContent = document.createElement('div');
         cryptoContent.className = 'msg-cipher';
-
-        contentSpan.textContent = "Encrypting...";
+        bubble.appendChild(document.createTextNode("Encrypting..."));
         bubble.appendChild(cryptoContent);
 
-        // Chunking Strategy for long messages
-        let buffer = "";
-        const CHUNK_SIZE = 5;
+        // Signal Peer that we are busy encrypting
+        this.conn.send({ type: 'SIGNAL', payload: 'START_ENC' });
+
+        // Lock our own input to prevent double-sending
+        this.lockInput(true);
 
         this.engine.encryptSequence(text, 'A',
             (char, idx, details) => {
-                if (idx === 0) contentSpan.textContent = "";
-                contentSpan.textContent += details.p;
+                if (idx === 0) bubble.childNodes[0].textContent = "";
+                bubble.childNodes[0].textContent += details.p;
                 cryptoContent.innerText += details.c;
-
-                // Real-time Streaming Logic
-                buffer += details.c;
-                if (buffer.length >= CHUNK_SIZE) {
-                    this.conn.send({
-                        type: 'MSG_CHUNK',
-                        alias: alias,
-                        payload: buffer,
-                        isFinal: false
-                    });
-                    buffer = "";
-                }
             },
             (fullCiphertext) => {
                 console.log(`%c[NETWORK OUTGOING] Payload: ${fullCiphertext}`, 'color: cyan; font-weight: bold;');
-
-                // Send remaining buffer + Final Flag
                 this.conn.send({
-                    type: 'MSG_CHUNK',
-                    alias: alias,
-                    payload: buffer,
-                    isFinal: true
+                    type: 'MSG',
+                    alias: alias, // Send my name!
+                    payload: fullCiphertext
                 });
+                // Unlock after sending
+                this.lockInput(false);
             }
         );
     }
-
-    // Track active receiving bubble to append partial chunks
-    // this.activeRxBubble = null; (Add to constructor if strict, but safe to use loosely)
 
     handleIncomingMessage(data) {
-        // Legacy support
-        if (data.type === 'MSG') {
-            this._handleLegacyMsg(data);
-            return;
-        }
-
         const ciphertext = data.payload;
-        const senderAlias = data.alias || "PEER";
-
-        if (!ciphertext && !data.isFinal) return; // empty chunk
-
-        // Do we have an active bubble for this stream?
-        // Simplified: Assume strictly ordered streams for now (safe for TCP/WebRTC)
-        if (!this.activeRxBubble) {
-            this.activeRxBubble = this.createBubble("received", senderAlias);
-            const contentSpan = this.activeRxBubble.querySelector('.msg-content');
-            // Clear the placeholder text immediately on first chunk
-            contentSpan.textContent = "";
-
-            const cryptoContent = document.createElement('div');
-            cryptoContent.className = 'msg-cipher';
-            this.activeRxBubble.appendChild(cryptoContent);
-        }
-
-        const bubble = this.activeRxBubble;
-        const contentSpan = bubble.querySelector('.msg-content');
-        const cryptoContent = bubble.querySelector('.msg-cipher');
-
-        cryptoContent.innerText += ciphertext; // Append cipher
-
-        // Decrypt the CHUNK
-        // Note: engine.decryptSequence usually resets generic state, but since
-        // this is a stream cipher, decrypting "BC" after "A" works IF the cube state is preserved.
-        // Our engine tracks state globally? Yes, 'this.cube' is shared.
-        // But 'decryptSequence' manages 'lastCipherChar'.
-        // We need to verify if 'fromIndex' relies on last char.
-        // The engine logic: 'const move = this.getCharMove(lastCipherChar);'
-        // We need to track 'lastCipherChar' across chunks.
-
-        // Actually, the Engine uses a local 'lastCipherChar' variable inside the function scope.
-        // This is a problem for chunking.
-        // Quick Fix: We won't change the engine. 
-        // We will just decrypt the chunk, but we need to know the *previous* chunk's last char.
-        // OR: The engine is fast enough to decrypt "Whole so far"? 
-        // No, that messes up cube rotation.
-
-        // BETTER APPROACH for minimal code change:
-        // just let the user wait? 
-        // No, the user asked specifically.
-
-        // Okay, I will implement a visual trick.
-        // The 'encryptSequence' calls callback.
-
-        // Wait, if I decrypt "Chunk 2" independently, I need the cube state to be at "Post-Chunk 1".
-        // The Cube State IS at Post-Chunk 1 because the sender *rotated* it.
-        // The Receiver *must* rotate it too.
-        // So sequential decryption of chunks works perfectly!
-        // The only issue is 'lastCipherChar' used for determining the Move.
-        // The helper `getCharMove(lastCipherChar)` needs the char from the *previous* chunk.
-
-        // I will hack it: I will attach 'prevChar' to the packet? 
-        // Or simpler: The receiver just remembers the last char of the previous chunk.
-
-        if (!this.lastRxChar) this.lastRxChar = 'A'; // Default IV
-
-        this.engine.decryptSequence(ciphertext, this.lastRxChar,
-            (pChar, idx, details) => {
-                contentSpan.textContent += pChar;
-                // Update global tracker
-                this.lastRxChar = details.c;
-            },
-            () => {
-                // Chunk done.
-                if (data.isFinal) {
-                    this.activeRxBubble = null;
-                    this.lastRxChar = 'A'; // Reset for NEXT message
-                }
-            }
-        );
-    }
-
-    _handleLegacyMsg(data) {
-        const ciphertext = data.payload;
-        const senderAlias = data.alias || "PEER";
+        const senderAlias = data.alias || "PEER"; // Get name
         console.log(`%c[NETWORK INCOMING] Payload: ${ciphertext}`, 'color: orange; font-weight: bold;');
 
         const bubble = this.createBubble("received", senderAlias);
-        const contentSpan = bubble.querySelector('.msg-content');
+        const mainTextNode = bubble.childNodes[1]; // [0] is name, [1] is text
 
         const cryptoContent = document.createElement('div');
         cryptoContent.className = 'msg-cipher';
-        cryptoContent.innerText = ciphertext;
+        cryptoContent.innerText = ciphertext; // Show cipher at bottom
         bubble.appendChild(cryptoContent);
 
+        // Instant Decryption
         this.engine.decryptSequence(ciphertext, 'A',
             (char, idx, details) => {
-                if (idx === 0) contentSpan.textContent = "";
-                contentSpan.textContent += details.p;
+                if (idx === 0) mainTextNode.textContent = "";
+                mainTextNode.textContent += details.p;
             },
-            () => { }
+            (fullPlaintext) => { }
         );
     }
 
@@ -355,11 +266,7 @@ export class CubeChat {
         nameTag.innerText = name;
         div.appendChild(nameTag);
 
-        // Content Span (The Plaintext)
-        const contentSpan = document.createElement('span');
-        contentSpan.className = 'msg-content';
-        div.appendChild(contentSpan);
-
+        div.appendChild(document.createTextNode("")); // Placeholder for text
         this.dom.log.appendChild(div);
         this.dom.log.scrollTop = this.dom.log.scrollHeight;
         return div;
@@ -371,5 +278,42 @@ export class CubeChat {
         div.innerText = `>> ${msg}`;
         this.dom.log.appendChild(div);
         this.dom.log.scrollTop = this.dom.log.scrollHeight;
+    }
+
+    showTypingIndicator() {
+        // Prevent duplicates
+        if (this.typingEl) return;
+
+        this.typingEl = document.createElement('div');
+        this.typingEl.className = 'msg system';
+        this.typingEl.style.color = '#00ff88';
+        this.typingEl.style.fontStyle = 'italic';
+        this.typingEl.innerText = ">> Incoming Transmission Detected (Decrypting Stream...)";
+        this.dom.log.appendChild(this.typingEl);
+        this.dom.log.scrollTop = this.dom.log.scrollHeight;
+    }
+
+    clearTypingIndicator() {
+        if (this.typingEl) {
+            this.typingEl.remove();
+            this.typingEl = null;
+        }
+    }
+
+    lockInput(locked) {
+        const input = document.getElementById('msg-input');
+        const btn = document.getElementById('btn-send');
+        if (input && btn) {
+            input.disabled = locked;
+            btn.disabled = locked;
+            if (locked) {
+                input.placeholder = "CHANNEL BUSY - WAIT FOR SIGNAL...";
+                input.style.borderColor = '#ff4444';
+            } else {
+                input.placeholder = "Type encrypted message...";
+                input.style.borderColor = '#444';
+                input.focus();
+            }
+        }
     }
 }
