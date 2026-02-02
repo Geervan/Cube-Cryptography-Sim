@@ -21,6 +21,8 @@ export class CubeChat {
 
         // We track the current Key locally
         this.currentKey = "DEFAULT";
+        this.isEncrypting = false;
+        this.isCompromised = false;
 
         // Ensure clean disconnect on tab close
         window.addEventListener('beforeunload', () => {
@@ -131,13 +133,26 @@ export class CubeChat {
             if (data.type === 'SYNC') {
                 this.handleSync(data.payload);
             } else if (data.type === 'MSG') {
+                if (this.isCompromised) {
+                    // Ignore this message, we already collided
+                    this.isCompromised = false;
+                    return;
+                }
                 this.clearTypingIndicator(); // Msg arrived, clear indicator
                 this.lockInput(false); // Unlock input
                 this.handleIncomingMessage(data);
             } else if (data.type === 'SIGNAL') {
                 if (data.payload === 'START_ENC') {
-                    this.showTypingIndicator();
-                    this.lockInput(true); // Found signal, lock input
+                    if (this.isEncrypting) {
+                        // WE HAVE A COLLISION!
+                        // I am sending AND they are sending.
+                        this.handleCollision();
+                    } else {
+                        this.showTypingIndicator();
+                        this.lockInput(true); // Found signal, lock input
+                    }
+                } else if (data.payload === 'COLLISION') {
+                    this.handleCollision();
                 }
             }
         });
@@ -160,6 +175,23 @@ export class CubeChat {
                 // Force close logic will trigger via the 'close' event eventually
             }
         };
+    }
+
+    handleCollision() {
+        this.logSystem("⚠ COLLISION DETECTED ⚠");
+        this.logSystem("Both parties transmitted simultaneously.");
+        this.logSystem("Resetting Encryption State...");
+
+        this.isCompromised = true;
+        this.isEncrypting = false; // Stop encrypting
+        this.clearTypingIndicator();
+        this.lockInput(false);
+
+        // Notify peer if I was the one who detected it first
+        this.conn.send({ type: 'SIGNAL', payload: 'COLLISION' });
+
+        // Reset Cube mechanics to clean state to undo partial rotations
+        this.cube.initCube(this.currentKey);
     }
 
     sendSyncPacket() {
@@ -210,14 +242,29 @@ export class CubeChat {
 
         // Lock our own input to prevent double-sending
         this.lockInput(true);
+        this.isCompromised = false; // Reset flag
+        this.isEncrypting = true; // Set flag that we are encrypting
 
         this.engine.encryptSequence(text, 'A',
             (char, idx, details) => {
+                // If collision happened during encryption, stop updating UI
+                if (this.isCompromised) return;
+
                 if (idx === 0) bubble.childNodes[0].textContent = "";
                 bubble.childNodes[0].textContent += details.p;
                 cryptoContent.innerText += details.c;
             },
             (fullCiphertext) => {
+                this.isEncrypting = false; // Clear flag
+
+                // Check if we crashed while encrypting
+                if (this.isCompromised) {
+                    this.logSystem("ABORTED: Transmission Collision.");
+                    bubble.remove(); // Delete the ghost bubble
+                    this.lockInput(false);
+                    return;
+                }
+
                 console.log(`%c[NETWORK OUTGOING] Payload: ${fullCiphertext}`, 'color: cyan; font-weight: bold;');
                 this.conn.send({
                     type: 'MSG',
