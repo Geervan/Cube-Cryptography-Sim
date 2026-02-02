@@ -177,18 +177,27 @@ export class CubeChat {
         };
     }
 
-    handleCollision() {
-        this.logSystem("⚠ COLLISION DETECTED ⚠");
-        this.logSystem("Both parties transmitted simultaneously.");
-        this.logSystem("Resetting Encryption State...");
+    handleCollision(isInitiator) {
+        // Red critical alert
+        const div = document.createElement('div');
+        div.className = 'msg system';
+        div.style.color = '#ff4444';
+        div.style.fontWeight = 'bold';
+        div.style.textShadow = '0 0 5px rgba(255,0,0,0.5)';
+        div.innerText = "⚠ COLLISION DETECTED - RESETTING LINK ⚠";
+        this.dom.log.appendChild(div);
+        this.dom.log.scrollTop = this.dom.log.scrollHeight;
 
         this.isCompromised = true;
         this.isEncrypting = false; // Stop encrypting
         this.clearTypingIndicator();
         this.lockInput(false);
 
-        // Notify peer if I was the one who detected it first
-        this.conn.send({ type: 'SIGNAL', payload: 'COLLISION' });
+        // Only notify peer if I AM THE ONE who found it.
+        // If I just received the warning, do not reply, or we loop forever.
+        if (isInitiator) {
+            this.conn.send({ type: 'SIGNAL', payload: 'COLLISION' });
+        }
 
         // Reset Cube mechanics to clean state to undo partial rotations
         this.cube.initCube(this.currentKey);
