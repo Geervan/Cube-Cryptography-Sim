@@ -16,6 +16,9 @@
   --spacing-md: 1rem;
 
   --border-thin: 1px solid var(--accent-secondary);
+
+  /* Restore Matrix Green for specific accents if needed */
+  --accent-color: #00ff88;
 }
 
 * {
@@ -476,6 +479,23 @@ textarea:focus {
 
 #proc-id {
   color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.entropy-graph-container {
+  background: #000;
+  border: var(--border-thin);
+  border-radius: 4px;
+  padding: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+#entropy-graph {
+  display: block;
+  width: 100%;
+  height: 60px;
+  background: #050505;
 }
 
 
