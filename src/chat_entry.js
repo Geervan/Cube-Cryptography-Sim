@@ -41,13 +41,34 @@ document.getElementById('btn-set-key').addEventListener('click', () => {
     }
 });
 
-document.getElementById('my-id').addEventListener('click', (e) => {
-    navigator.clipboard.writeText(e.target.innerText);
-    e.target.innerText = "COPIED TO CLIPBOARD!";
+document.getElementById('my-id').addEventListener('click', async (e) => {
+    const id = e.target.innerText;
+
+    // Better Mobile Sharing
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Secure Chat ID',
+                text: id,
+            });
+            e.target.innerText = "SHARED!";
+        } catch (err) {
+            // User cancelled search or error, fallback to copy
+            copyToClipboard(e.target, id);
+        }
+    } else {
+        copyToClipboard(e.target, id);
+    }
+
     setTimeout(() => {
         e.target.innerText = chatModule.myId;
-    }, 1000);
+    }, 2000);
 });
+
+function copyToClipboard(element, text) {
+    navigator.clipboard.writeText(text);
+    element.innerText = "COPIED!";
+}
 
 document.getElementById('btn-connect').addEventListener('click', () => {
     const target = document.getElementById('target-id').value;

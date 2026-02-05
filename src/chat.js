@@ -88,7 +88,12 @@ export class CubeChat {
         });
 
         this.peer.on('error', (err) => {
-            this.logSystem("Peer Error: " + err.type);
+            if (err.type === 'network' || err.type === 'disconnected') {
+                this.logSystem("Network glitch. Reconnecting...");
+                this.peer.reconnect();
+            } else {
+                this.logSystem("Peer Error: " + err.type);
+            }
         });
     }
 
