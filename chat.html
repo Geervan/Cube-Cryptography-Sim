@@ -125,6 +125,75 @@
             color: #000;
         }
 
+        /* Toggle Button - DESKTOP HIDDEN */
+        .icon-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: none;
+            /* Hide on desktop */
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .icon-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .icon-btn:hover {
+            color: #fff;
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Pulse Animation for attention */
+        @keyframes subtle-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4);
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 255, 136, 0);
+                border-color: #00ff88;
+                color: #00ff88;
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+            }
+        }
+
+        .icon-btn.attention {
+            animation: subtle-pulse 2s infinite;
+        }
+
+        /* Settings Drawer - DESKTOP VISIBLE */
+        .settings-drawer {
+            background: #121214;
+            border-bottom: 1px solid #333;
+            padding: 20px;
+            max-height: none;
+            /* Always open on desktop */
+            display: block;
+            overflow: visible;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* Chat Area */
         .chat-history {
             flex: 1;
@@ -244,6 +313,89 @@
             font-size: 0.7rem;
             padding: 0 8px;
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 900px) {
+            #status-header-mobile {
+                display: block !important;
+                /* Show specific header status on mobile */
+            }
+
+            body {
+                flex-direction: column;
+                height: 100%;
+                height: 100dvh;
+                /* Ensure full viewport on mobile */
+                overflow: hidden;
+                /* Prevent body scroll so cube stays fixed */
+            }
+
+            #view-cube {
+                flex: none;
+                height: 35vh;
+                /* Fixed height for cube */
+                width: 100%;
+                border-bottom: 1px solid #333;
+                z-index: 5;
+            }
+
+            #view-chat {
+                width: 100%;
+                flex: 1;
+                /* Take remaining height */
+                height: auto;
+                min-height: 0;
+                /* Critical for flex scrolling */
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+                border-left: none;
+                overflow: hidden;
+                /* Container doesn't scroll, children do */
+            }
+
+            .chat-history {
+                flex: 1;
+                overflow-y: auto;
+                /* Scrollable messages */
+                min-height: 0;
+                padding: 10px;
+                -webkit-overflow-scrolling: touch;
+                /* Smooth scroll */
+            }
+
+            .chat-header h1 {
+                font-size: 1rem;
+            }
+
+            .conn-box,
+            .chat-footer {
+                padding: 10px;
+                flex-shrink: 0;
+                /* Don't shrink these */
+            }
+
+            /* --- Mobile Specific Drawer Logic --- */
+            .icon-btn {
+                display: flex;
+                /* Flex to center SVG */
+            }
+
+            .settings-drawer {
+                background: #151518;
+                padding: 0;
+                max-height: 0;
+                /* Hidden by default on mobile */
+                overflow: hidden;
+                transition: max-height 0.3s ease-out, padding 0.3s ease;
+            }
+
+            .settings-drawer.open {
+                max-height: 500px;
+                padding: 20px;
+                border-bottom: 1px solid #00ff88;
+            }
+        }
     </style>
 </head>
 
@@ -257,28 +409,46 @@
 
     <div id="view-chat">
         <div class="chat-header">
-            <h1>SECURE CHAT SIM</h1>
+            <div class="header-row">
+                <div>
+                    <h1>SECURE CHAT SIM</h1>
+                    <div id="status-header-mobile" class="conn-status"
+                        style="font-size: 0.7rem; margin:0; display:none;">DISCONNECTED</div>
+                </div>
+                <button id="btn-toggle-settings" class="icon-btn attention" title="Connection Settings">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible Settings Drawer -->
+        <div id="settings-drawer" class="settings-drawer">
             <div class="key-config">
                 <input type="text" id="my-key-input" placeholder="ENTER KEY" autocomplete="off"
                     title="Shared Encryption Key">
                 <button id="btn-set-key">SET</button>
             </div>
-        </div>
 
-        <div class="conn-box">
-            <div id="status-text" class="conn-status">DISCONNECTED</div>
-            <div id="my-id" class="id-pill" title="Click to copy">GENERATING ID...</div>
+            <div style="margin-top: 15px; border-top: 1px dashed #333; padding-top: 15px;">
+                <!-- RESTORED MAIN STATUS -->
+                <div id="status-text" class="conn-status" style="text-align: left; margin-bottom: 10px;">DISCONNECTED
+                </div>
 
-            <!-- Identity Config -->
-            <div class="input-group" style="margin-bottom: 10px;">
-                <input type="text" id="my-alias" placeholder="Enter Your Name" spellcheck="false" autocomplete="off"
-                    style="width: 30%;">
-            </div>
+                <div id="my-id" class="id-pill" title="Click to copy">GENERATING ID...</div>
 
-            <div class="input-group">
-                <input type="text" id="target-id" placeholder="Peer ID to Connect..." spellcheck="false"
-                    autocomplete="off">
-                <button id="btn-connect">LINK</button>
+                <!-- Identity Config -->
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <input type="text" id="my-alias" placeholder="Enter Your Name" spellcheck="false" autocomplete="off"
+                        style="width: 30%;">
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="target-id" placeholder="Peer ID to Connect..." spellcheck="false"
+                        autocomplete="off">
+                    <button id="btn-connect">LINK</button>
+                </div>
             </div>
         </div>
 
@@ -294,6 +464,38 @@
     </div>
 
     <script type="module" src="/src/chat_entry.js"></script>
+    <script>
+        // Simple UI Toggle Logic
+        const btnToggle = document.getElementById('btn-toggle-settings');
+        const drawer = document.getElementById('settings-drawer');
+
+        btnToggle.addEventListener('click', () => {
+            drawer.classList.toggle('open');
+            // Remove attention grabber once clicked
+            btnToggle.classList.remove('attention');
+        });
+
+        // SYNC LOGIC: Main Status (Panel) -> Mobile Header
+        const mainStatus = document.getElementById('status-text');
+        const mobileStatus = document.getElementById('status-header-mobile');
+
+        if (mainStatus && mobileStatus) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'characterData' || mutation.type === 'childList') {
+                        mobileStatus.innerText = mainStatus.innerText;
+                    }
+                    if (mutation.attributeName === 'class') {
+                        mobileStatus.className = mainStatus.className;
+                    }
+                });
+            });
+
+            observer.observe(mainStatus, { attributes: true, childList: true, subtree: true, characterData: true });
+        }
+
+
+    </script>
 </body>
 
 </html>
