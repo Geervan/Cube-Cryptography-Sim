@@ -321,4 +321,13 @@ p {
     .big-btn {
         text-align: center;
     }
+
+    .stamp-box {
+        top: 20px;
+        right: 20px;
+        transform: scale(0.6) rotate(-15deg);
+        transform-origin: top right;
+        opacity: 0.5;
+        z-index: 0;
+    }
 }
