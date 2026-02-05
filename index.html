@@ -1,197 +1,96 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rubik's Cryptography</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROJECT: CUBE // AUTHORIZED ACCESS ONLY</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Oswald:wght@500;700&display=swap"
     rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      background-color: #121214;
-      color: #e0e0e0;
-      font-family: 'IBM Plex Sans', sans-serif;
-    }
-
-    #app {
-      opacity: 1;
-    }
-
-    .lab-workspace {
-      background: #121214;
-      display: flex;
-      flex-direction: row;
-      height: calc(100vh - 60px);
-      /* Full height minus header */
-      overflow: hidden;
-    }
-
-    #loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #121214;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.3s ease;
-    }
-
-    #loading-overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-  </style>
-
+  <link rel="stylesheet" href="/src/landing.css">
 </head>
 
 <body>
-  <div id="loading-overlay">
-    <div style="font-family: 'IBM Plex Mono', monospace; color: #00ff88; letter-spacing: 0.2em;">INITIALIZING...</div>
-  </div>
-  <div id="app">
-    <header class="lab-header">
-      <div class="header-left">
-        <h1 class="logo">ENC.CUBE_SIM <span class="version">v1.2.0 CFB</span></h1>
-        <a href="https://www.linkedin.com/in/geervan/" target="_blank" class="credit-badge">by GEERVAN</a>
+  <div class="noise-overlay"></div>
+  <div class="scan-line"></div>
+
+  <div class="doc-container">
+    <!-- Stamp -->
+    <div class="stamp-box">
+      <div class="stamp-rotate">
+        <div class="stamp-text">DECLASSIFIED</div>
+        <div class="stamp-date">DATE: 04-02-2026</div>
+        <div class="stamp-auth">AUTH: DIR-7</div>
       </div>
-      <div class="mode-selector">
-        <button id="tab-enc" class="mode-tab active">ENCRYPT</button>
-        <button id="tab-dec" class="mode-tab">DECRYPT</button>
-      </div>
-      <div class="header-right">
-        <a href="lore.html" class="lore-btn">LORE</a>
-        <div class="status-indicator">
-          <span class="status-dot"></span> <span id="sys-status">SENDER READY</span>
-        </div>
-        <a href="chat.html" class="lore-btn" style="border-color: #00ff88; color: #00ff88;">SECURE CHAT</a>
-      </div>
+    </div>
+
+    <header class="header-grid">
+      <div class="b-box">CLASSIFICATION: <span class="red-ink">TOP SECRET // EYES ONLY</span></div>
+      <div class="b-box align-right">DOC_REF: #88-X-CUBE</div>
     </header>
 
-    <main class="lab-workspace">
-      <aside class="panel left-panel">
-        <div class="panel-header">
-          <h2>// PARAMETERS</h2>
-          <div class="line-deco"></div>
-        </div>
-        <div class="control-group">
-          <label>SHARED SECRET (KEY)</label>
-          <input type="text" id="secret-key" placeholder="Enter seed phrase..." spellcheck="false" autocomplete="off">
-          <button id="btn-init" class="lab-btn">INITIALIZE MACHINE</button>
-        </div>
+    <main class="main-content">
+      <div class="title-block">
+        <h1 class="hero-title">PROJECT: CUBE</h1>
+        <div class="sub-title">POLYALPHABETIC MECHANICAL CIPHER MACHINE</div>
+      </div>
 
-        <div class="control-group">
-          <label id="lbl-input">PLAINTEXT INPUT</label>
-          <textarea id="data-input" rows="4" placeholder="Type message to encrypt..." spellcheck="false"></textarea>
-        </div>
-
-        <div class="control-group">
-          <div class="btn-row">
-            <button id="btn-action" class="lab-btn primary">ENCRYPT MESSAGE</button>
-          </div>
-          <div class="control-subgroup">
-            <label>EXECUTION MODE</label>
-            <div class="step-controls">
-              <label class="toggle-label">
-                <input type="checkbox" id="mode-step"> STEP-BY-STEP
-              </label>
-              <button id="btn-step" class="lab-btn sm" disabled>NEXT OP</button>
-            </div>
-          </div>
-          <div class="control-subgroup">
-            <label>Step Speed</label>
-            <input type="range" id="speed-control" min="1" max="10" value="5">
-          </div>
+      <div class="content-grid">
+        <div class="spec-sheet">
+          <h3>// TECHNICAL_SPECIFICATIONS</h3>
+          <ul>
+            <li><span class="bullet">>></span> <strong>ARCH:</strong> 3D lattice Permutation Engine</li>
+            <li><span class="bullet">>></span> <strong>STATE:</strong> 43 Quintillion Variations</li>
+            <li><span class="bullet">>></span> <strong>METHOD:</strong> Dynamic State Feedback (CFB)</li>
+            <li><span class="bullet">>></span> <strong>STATUS:</strong> OPERATIONAL</li>
+          </ul>
         </div>
 
-        <div class="manual-controls">
-          <label>MANUAL OVERRIDE</label>
-          <div class="instruction">Drag to rotate view. <br> Type: U D L R F B</div>
+        <div class="mission-brief">
+          <h3>// MISSION_BRIEF</h3>
+          <p>
+            Project CUBE utilizes a <span class="red-highlight">physical simulation</span>
+            to generate cryptographic entropy. Unlike static keys, the machine's internal
+            state evolves with every character processed.
+          </p>
+          <p class="redacted-text">
+            The integrity of the encryption depends solely on the mechanical synchronization
+            of remote peers. [REDACTED SECTION: DO NOT DISTRIBUTE].
+          </p>
         </div>
-      </aside>
+      </div>
 
-      <section class="viewport" id="cube-container">
-        <!-- Three.js Canvas will spawn here -->
-        <div class="overlay-ui">
-          <div class="reticle reticle-tl"></div>
-          <div class="reticle reticle-tr"></div>
-          <div class="reticle reticle-bl"></div>
-          <div class="reticle reticle-br"></div>
-        </div>
-      </section>
+      <div class="action-zone">
+        <a href="lab.html" class="big-btn">
+          <span class="btn-text">INITIALIZE SEQUENCE</span>
+          <span class="btn-sub">ENTER_LAB_ENVIRONMENT >></span>
+        </a>
 
-      <aside class="panel right-panel">
-        <div class="panel-header">
-          <h2>// SYSTEM KERNEL</h2>
-          <div class="line-deco"></div>
-        </div>
+        <a href="lore.html" class="secondary-btn">
+          READ_STORY
+        </a>
+      </div>
+    </main>
 
-        <div class="monitor-group">
-          <label>STATE HASH</label>
-          <div id="state-hash" class="readout-display">000000000000</div>
-        </div>
-
-        <div class="process-monitor">
-          <!-- Step Indicator -->
-          <div class="proc-step-header">
-            <span class="step-label">ACTIVE OPERATION</span>
-            <span id="step-count" class="step-value">IDLE</span>
-          </div>
-
-          <!-- Visual Flow -->
-          <div class="flow-container">
-            <!-- Input Card -->
-            <div class="flow-card">
-              <span class="flow-label">INPUT</span>
-              <div id="disp-input" class="flow-val">-</div>
-              <div id="disp-input-code" class="flow-sub">-</div>
-            </div>
-
-            <div class="flow-op">+</div>
-
-            <!-- Sensor Card -->
-            <div class="flow-card sensor">
-              <span class="flow-label">SENSOR KEY</span>
-              <div id="disp-sensor" class="flow-val">-</div>
-              <div id="disp-sensor-code" class="flow-sub">-</div>
-            </div>
-
-            <div class="flow-op">=</div>
-
-            <!-- Output Card -->
-            <div class="flow-card output">
-              <span class="flow-label">OUTPUT</span>
-              <div id="disp-result" class="flow-val">-</div>
-              <div id="disp-result-code" class="flow-sub">-</div>
-            </div>
-          </div>
-
-          <!-- Live Formula -->
-          <div class="math-display">
-            <span class="math-label">ALGORITHM</span>
-            <div id="disp-math" class="math-val">WAITING FOR STREAM...</div>
-          </div>
-        </div>
-
-        <div class="control-group" style="margin-top: 20px;">
-          <label>OUTPUT STREAM</label>
-          <textarea id="data-output" rows="4" readonly placeholder="Result will appear here..."></textarea>
-        </div>
-      </aside>
-
+    <footer class="footer-grid">
+      <div class="b-box info-box">
+        WARNING: UNAUTHORIZED ACCESS IS A FEDERAL OFFENSE. <br>
+        SYSTEM MONITORED BY <span class="red-ink">GEERVAN SECURITY</span>.
+      </div>
+      <div class="b-box barcode-box">
+        ||| || ||| | |||| || || | |||
+      </div>
+    </footer>
   </div>
-  </main>
-  </div>
-  <script type="module" src="/src/main.js"></script>
+
+  <script>
+    // Grain Animation (Standard JS to keep it standalone)
+    console.log("System Ready.");
+  </script>
 </body>
 
 </html>

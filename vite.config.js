@@ -5,8 +5,8 @@ export default defineConfig({
     build: {
         rollupOptions: {
             input: {
-                main: resolve(__dirname, 'landing.html'),
-                home:resolve(__dirname, 'index.html'),
+                main: resolve(__dirname, 'index.html'), // Was landing
+                lab: resolve(__dirname, 'lab.html'),    // Was index
                 lore: resolve(__dirname, 'lore.html'),
                 chat: resolve(__dirname, 'chat.html'),
             },
