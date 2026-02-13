@@ -57,9 +57,8 @@
             to generate cryptographic entropy. Unlike static keys, the machine's internal
             state evolves with every character processed.
           </p>
-          <p class="redacted-text">
-            The integrity of the encryption depends solely on the mechanical synchronization
-            of remote peers. [REDACTED SECTION: DO NOT DISTRIBUTE].
+          <p>
+            <strong>FOR REVIEWERS:</strong> Please explore the <span class="red-ink">Lab Environment</span> to audit the mechanical stream-generation logic or test the <span class="red-ink">Secure Chat</span> module for P2P encrypted transmission.
           </p>
         </div>
       </div>
@@ -70,9 +69,14 @@
           <span class="btn-sub">ENTER_LAB_ENVIRONMENT >></span>
         </a>
 
-        <a href="lore.html" class="secondary-btn">
-          READ_STORY
-        </a>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <a href="chat.html" class="secondary-btn" style="border-color: #00ff88; color: #00ff88;">
+            SECURE_CHAT
+          </a>
+          <a href="lore.html" class="secondary-btn">
+            STORY & ORIGINS
+          </a>
+        </div>
       </div>
     </main>
 

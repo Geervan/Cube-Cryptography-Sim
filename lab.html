@@ -69,6 +69,7 @@
         <button id="tab-dec" class="mode-tab">DECRYPT</button>
       </div>
       <div class="header-right">
+        <button id="btn-guide" class="lore-btn" style="border-color: #a1a1aa; color: #a1a1aa;">? HELP</button>
         <a href="lore.html" class="lore-btn">LORE</a>
         <div class="status-indicator">
           <span class="status-dot"></span> <span id="sys-status">SENDER READY</span>
@@ -86,7 +87,10 @@
         <div class="control-group">
           <label>SHARED SECRET (KEY)</label>
           <input type="text" id="secret-key" placeholder="Enter seed phrase..." spellcheck="false" autocomplete="off">
-          <button id="btn-init" class="lab-btn">INITIALIZE MACHINE</button>
+          <div class="btn-row">
+            <button id="btn-init" class="lab-btn">INITIALIZE</button>
+            <button id="btn-demo" class="lab-btn" style="color: #00ff88; border-color: #00ff88;">DEMO</button>
+          </div>
         </div>
 
         <div class="control-group">
@@ -188,6 +192,120 @@
   </div>
   </main>
   </div>
+  </div>
+
+  <!-- Guide Overlay -->
+  <div id="guide-overlay" class="hidden">
+    <div class="guide-modal">
+      <div class="guide-header">
+        <h2>// RESEARCH_GUIDE: CUBE_CIPHER</h2>
+        <button id="close-guide">×</button>
+      </div>
+      <div class="guide-body">
+        <section>
+          <h3>1. THE LATTICE (KEYING)</h3>
+          <p>Every "Shared Secret" generates a unique 3D permutation of the cube. This is our <strong>Key Space</strong> (43 Quintillion states).</p>
+        </section>
+        <section>
+          <h3>2. THE SENSOR (ENTROPY)</h3>
+          <p>We read the value of the <strong>Front-Top-Right</strong> cubie. This single character is our <strong>Stream Key (K)</strong> for the current step.</p>
+        </section>
+        <section>
+          <h3>3. DYNAMIC EVOLUTION (CFB)</h3>
+          <p>This is a <strong>Cipher Feedback</strong> implementation. The ciphertext of the previous character determines the machine's next mechanical rotation, ensuring the same plaintext character encrypts differently every time.</p>
+        </section>
+        <section>
+          <h3>4. QUICK START</h3>
+          <p>Enter a key, type a message, and hit <strong>ENCRYPT</strong>. Use <strong>STEP-BY-STEP</strong> mode to watch the math happen in real-time on the right panel.</p>
+        </section>
+      </div>
+      <div class="guide-footer">
+        <button id="start-demo-btn" class="lab-btn primary">LOAD TECH DEMO</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #guide-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(5px);
+      transition: opacity 0.3s;
+    }
+
+    #guide-overlay.hidden {
+      display: none;
+    }
+
+    .guide-modal {
+      background: #1a1a1e;
+      border: 1px solid #333;
+      width: 90%;
+      max-width: 600px;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 0 50px rgba(0, 255, 136, 0.1);
+    }
+
+    .guide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
+      padding-bottom: 15px;
+    }
+
+    .guide-header h2 {
+      margin: 0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1rem;
+      color: #00ff88;
+    }
+
+    #close-guide {
+      background: none;
+      border: none;
+      color: #8d8d99;
+      font-size: 2rem;
+      cursor: pointer;
+    }
+
+    .guide-body {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .guide-body h3 {
+      font-size: 0.8rem;
+      color: #8d8d99;
+      margin: 0 0 5px 0;
+    }
+
+    .guide-body p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin: 0;
+      color: #ccc;
+    }
+
+    .guide-footer {
+      margin-top: 10px;
+      padding-top: 15px;
+      border-top: 1px solid #333;
+    }
+  </style>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 

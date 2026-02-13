@@ -321,6 +321,64 @@ window.addEventListener('keydown', (e) => {
 
 
 
+// --- ONBOARDING & GUIDE LOGIC ---
+const elGuideOverlay = document.getElementById('guide-overlay');
+const btnGuide = document.getElementById('btn-guide');
+const btnCloseGuide = document.getElementById('close-guide');
+const btnDemo = document.getElementById('btn-demo');
+const btnStartDemo = document.getElementById('start-demo-btn');
+
+function toggleGuide(show) {
+  if (show) {
+    elGuideOverlay.classList.remove('hidden');
+  } else {
+    elGuideOverlay.classList.add('hidden');
+  }
+}
+
+btnGuide.addEventListener('click', () => toggleGuide(true));
+btnCloseGuide.addEventListener('click', () => toggleGuide(false));
+elGuideOverlay.addEventListener('click', (e) => {
+  if (e.target === elGuideOverlay) toggleGuide(false);
+});
+
+function runDemo() {
+  toggleGuide(false);
+  elSecret.value = "CRYPTOGRAPHY IS FUN";
+  elDataInput.value = "THE CUBE NEVER LIES";
+  
+  // Visual Feedback
+  elSecret.style.borderColor = "#00ff88";
+  elDataInput.style.borderColor = "#00ff88";
+  
+  // Trigger Init
+  document.getElementById('btn-init').click();
+  
+  // Highlight Action Button
+  btnAction.classList.add('pulse-highlight');
+  log("DEMO: Sample data loaded. Click 'ENCRYPT MESSAGE' to begin stream.");
+}
+
+btnDemo.addEventListener('click', runDemo);
+btnStartDemo.addEventListener('click', runDemo);
+
+// Logic to "Exit" Demo Mode on interaction
+const clearDemoState = () => {
+  btnAction.classList.remove('pulse-highlight');
+  elSecret.style.borderColor = "";
+  elDataInput.style.borderColor = "";
+};
+
+btnAction.addEventListener('click', clearDemoState);
+elSecret.addEventListener('input', clearDemoState);
+elDataInput.addEventListener('input', clearDemoState);
+
+// Auto-onboarding for first session
+if (!localStorage.getItem('cube_visited')) {
+  setTimeout(() => toggleGuide(true), 1500);
+  localStorage.setItem('cube_visited', 'true');
+}
+
 log("SYSTEM ONLINE. AWAITING INPUT.");
 updateHash();
 
