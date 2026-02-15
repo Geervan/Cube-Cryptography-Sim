@@ -1,5 +1,6 @@
 import './style.css'
 import { CubeSimulator } from './cube.js';
+import { CubeCipherEngine } from './cipher_engine.js';
 
 // Elements
 const elSecret = document.getElementById('secret-key');
@@ -19,6 +20,7 @@ let currentHistory = []; // Track moves for 'undo'
 
 // CFB State
 let lastCipherChar = 'A'; // IV
+let currentStepConstants = [];
 
 // Map Char -> Move
 function getCharMove(char) {
@@ -72,7 +74,12 @@ document.getElementById('btn-init').addEventListener('click', () => {
   // Initialize with key-based textures
   cube.initCube(key);
   currentHistory = [];
-  log("SYSTEM: Cube Initialized with Key-derived Lattice.");
+  
+  // Generate Round Constants from initial key
+  currentStepConstants = CubeCipherEngine.generateStepConstants(key, 1024);
+  console.log("%c[CUBE_CIPHER] Generated Round Constant Table (RC):", "color: #00ff88; font-weight: bold;", currentStepConstants);
+  
+  log("SYSTEM: Cube Initialized and Round Constants generated.");
 });
 
 
@@ -158,11 +165,12 @@ function runEncryption() { // Filter: Keep only A-Z, a-z, space
       // 3. Read Sensor
       const sensorVal = cube.getSensorValue();
 
-      // 4. Encrypt: Modulo 53 (A-Z, a-z, space)
+      // 4. Encrypt: C = (P + K + RC) mod 53
       const k = toIndex(sensorVal);
       const p = toIndex(pChar);
+      const rc = currentStepConstants[index % currentStepConstants.length] || 0;
 
-      const cVal = (p + k) % 53;
+      const cVal = (p + k + rc) % 53;
       const cChar = fromIndex(cVal);
 
       // 5. Update Output & State
@@ -177,11 +185,14 @@ function runEncryption() { // Filter: Keep only A-Z, a-z, space
 
       document.getElementById('disp-sensor').innerText = sensorVal;
       document.getElementById('disp-sensor-code').innerText = `IDX ${k}`;
+      
+      document.getElementById('disp-rc').innerText = rc;
+      document.getElementById('disp-rc-code').innerText = `IDX ${rc}`;
 
       document.getElementById('disp-result').innerText = cChar;
       document.getElementById('disp-result-code').innerText = `IDX ${cVal}`;
 
-      document.getElementById('disp-math').innerText = `(${p} + ${k}) % 53 = ${cVal}`;
+      document.getElementById('disp-math').innerText = `(${p} + ${k} + ${rc}) % 53 = ${cVal}`;
 
       index++;
       // 6. Loop
@@ -232,13 +243,14 @@ function runDecryption() {
       // 2. Read Sensor (Should match sender's K)
       const sensorVal = cube.getSensorValue();
 
-      // 3. Decrypt: P = (C - K) (Modulo 53)
+      // 3. Decrypt: P = (C - K - RC) mod 53
       const k = toIndex(sensorVal);
       const c = toIndex(cChar);
+      const rc = currentStepConstants[index % currentStepConstants.length] || 0;
 
-      // Inverse Modulo: (C - K)
-      let pVal = (c - k) % 53;
-      if (pVal < 0) pVal += 53;
+      // Inverse Modulo
+      let pVal = (c - k - rc) % 53;
+      while (pVal < 0) pVal += 53;
 
       const pChar = fromIndex(pVal);
 
@@ -253,11 +265,14 @@ function runDecryption() {
 
       document.getElementById('disp-sensor').innerText = sensorVal;
       document.getElementById('disp-sensor-code').innerText = `IDX ${k}`;
+      
+      document.getElementById('disp-rc').innerText = rc;
+      document.getElementById('disp-rc-code').innerText = `IDX ${rc}`;
 
       document.getElementById('disp-result').innerText = pChar;
       document.getElementById('disp-result-code').innerText = `IDX ${pVal}`;
 
-      document.getElementById('disp-math').innerText = `(${c} - ${k}) % 53 = ${pVal}`;
+      document.getElementById('disp-math').innerText = `(${c} - ${k} - ${rc}) % 53 = ${pVal}`;
 
       index++;
       processNext();

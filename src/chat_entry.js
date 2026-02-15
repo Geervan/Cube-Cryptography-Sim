@@ -43,9 +43,10 @@ document.getElementById('btn-set-key').addEventListener('click', () => {
 
 document.getElementById('my-id').addEventListener('click', async (e) => {
     const id = e.target.innerText;
+    const isSmallScreen = window.innerWidth < 900;
 
-    // Better Mobile Sharing
-    if (navigator.share) {
+    // Prioritize Share on Mobile, Copy on Desktop
+    if (navigator.share && isSmallScreen) {
         try {
             await navigator.share({
                 title: 'Secure Chat ID',
@@ -53,7 +54,7 @@ document.getElementById('my-id').addEventListener('click', async (e) => {
             });
             e.target.innerText = "SHARED!";
         } catch (err) {
-            // User cancelled search or error, fallback to copy
+            // User cancelled or error, fallback to copy
             copyToClipboard(e.target, id);
         }
     } else {

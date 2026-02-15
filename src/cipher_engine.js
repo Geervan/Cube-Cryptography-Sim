@@ -2,6 +2,34 @@ export class CubeCipherEngine {
     constructor(cubeSimulator) {
         this.cube = cubeSimulator;
         this.movesList = ['U', "U'", 'R', "R'", 'F', "F'"];
+        this.stepConstants = []; // Table of key-dependent round/step constants
+    }
+
+    setStepConstants(constants) {
+        this.stepConstants = constants;
+    }
+
+    /**
+     * Generates a deterministic sequence of constants derived from the secret key.
+     * Similar to a Key Expansion / S-Box generation.
+     */
+    static generateStepConstants(seedKey, length = 512) {
+        let seedNum = 0;
+        for (let i = 0; i < seedKey.length; i++) seedNum += seedKey.charCodeAt(i) * (i + 1);
+
+        const random = (s) => {
+            const x = Math.sin(s) * 10000;
+            return x - Math.floor(x);
+        };
+
+        const result = [];
+        let s = seedNum;
+        for (let i = 0; i < length; i++) {
+            s += i + 1; // n-linear advancement
+            const rv = random(s);
+            result.push(Math.floor(rv * 53)); // Modulo 53 for character space
+        }
+        return result;
     }
 
     // --- Helpers ---
@@ -17,13 +45,17 @@ export class CubeCipherEngine {
         if (i === 52) return ' ';
         if (i <= 25) return String.fromCharCode(i + 65); // 0-25 -> A-Z
         return String.fromCharCode(i - 26 + 97); // 26-51 -> a-z
-        return '?';
     }
 
     getCharMove(char) {
         if (!char) return 'U';
         const code = char.charCodeAt(0);
         return this.movesList[code % 6];
+    }
+
+    getStepConstant(i) {
+        if (!this.stepConstants || this.stepConstants.length === 0) return 0;
+        return this.stepConstants[i % this.stepConstants.length];
     }
 
     /**
@@ -55,10 +87,12 @@ export class CubeCipherEngine {
                 // 1. Read Sensor
                 const sensorVal = this.cube.getSensorValue();
 
-                // 2. Math
+                // 2. Math: C = (P + K + RC) mod 53
                 const k = this.toIndex(sensorVal);
                 const p = this.toIndex(pChar);
-                const cVal = (p + k) % 53;
+                const rc = this.getStepConstant(index);
+                
+                const cVal = (p + k + rc) % 53;
                 const cChar = this.fromIndex(cVal);
 
                 // 3. Update State
@@ -66,7 +100,7 @@ export class CubeCipherEngine {
                 lastCipherChar = cChar;
 
                 // 4. GUI Callback
-                if (onProgress) onProgress(cChar, index, { p: pChar, k: sensorVal, c: cChar });
+                if (onProgress) onProgress(cChar, index, { p: pChar, k: sensorVal, c: cChar, rc: rc });
 
                 // 5. Next
                 index++;
@@ -104,16 +138,18 @@ export class CubeCipherEngine {
 
                 const k = this.toIndex(sensorVal);
                 const c = this.toIndex(cChar);
+                const rc = this.getStepConstant(index);
 
-                let pVal = (c - k) % 53;
-                if (pVal < 0) pVal += 53;
+                // Inverse Modulo: P = (C - K - RC) mod 53
+                let pVal = (c - k - rc) % 53;
+                while (pVal < 0) pVal += 53;
 
                 const pChar = this.fromIndex(pVal);
 
                 fullPlaintext += pChar;
                 lastCipherChar = cChar;
 
-                if (onProgress) onProgress(pChar, index, { p: pChar, k: sensorVal, c: cChar });
+                if (onProgress) onProgress(pChar, index, { p: pChar, k: sensorVal, c: cChar, rc: rc });
 
                 index++;
                 processNext();

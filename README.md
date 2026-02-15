@@ -24,10 +24,14 @@ To extract a stream key (K) from the 3D state, we sample a fixed coordinate in t
 
 ### 3. Stream Cipher & CFB Mode
 
-The machine implements a **Polyalphabetic Cipher** using **Cipher Feedback (CFB)** mode. The transformation logic follows:
-`Cᵢ = E_{Kᵢ}(Pᵢ) = (Pᵢ + Kᵢ) mod 53`
+The machine implements a **Polyalphabetic Cipher** using **Cipher Feedback (CFB)** mode and **Key-Dependent Round Constants**. The transformation logic follows:
 
-After each character is encrypted, the resulting **Ciphertext (C)** is fed back into the machine. The character code determines a mechanical move (e.g., 'A' -> U move), which permutes the cube and generates a new, unpredictable Sensor Key (K) for the next step.
+`Cᵢ = (Pᵢ + Kᵢ + RCᵢ) mod 53`
+
+- **Kᵢ**: The Sensor Key extracted from the 3D lattice.
+- **RCᵢ**: A deterministic Step Constant generated from the initial secret key (similar to AES Round Constants).
+
+After each character is encrypted, the resulting **Ciphertext (C)** is fed back into the machine. The character code determines a mechanical move (e.g., 'A' -> U move), which permutes the cube and generates a new, unpredictable Sensor Key (K) for the next step. This design breaks linearity and ensures that identical messages result in different ciphertext streams if keys differ.
 
 ### 4. Character Mapping
 

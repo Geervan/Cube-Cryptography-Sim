@@ -40,7 +40,13 @@ export class CubeChat {
         this.currentKey = key;
         // Re-init cube with this key immediately so user sees it
         this.cube.initCube(key);
-        this.logSystem(`Local Key set to: ${key}`);
+        
+        // Generate and set Round Constants
+        const rcs = CubeCipherEngine.generateStepConstants(key, 1024);
+        console.log("%c[CHAT_SYNC] Generated Key-Dependent RC Table:", "color: #00ff88; font-weight: bold;", rcs);
+        this.engine.setStepConstants(rcs);
+        
+        this.logSystem(`Local Key set to: ${key} (RC Updated)`);
 
         // Dynamic Rekeying: If connected, force peer to update too
         if (this.connected) {
@@ -232,6 +238,11 @@ export class CubeChat {
 
         this.currentKey = newKey;
         this.cube.initCube(newKey);
+        
+        // Synchronize Round Constants
+        const rcs = CubeCipherEngine.generateStepConstants(newKey, 1024);
+        console.log("%c[CHAT_SYNC] Received & Generated RC Table:", "color: #00ff88; font-weight: bold;", rcs);
+        this.engine.setStepConstants(rcs);
 
         // Update the UI Input to reflect the new state
         const input = document.getElementById('my-key-input');
