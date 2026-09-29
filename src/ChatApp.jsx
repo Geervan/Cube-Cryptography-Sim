@@ -719,7 +719,7 @@ export function ChatApp() {
               <div
                 className={`id-pill ${isCopied ? 'copied' : ''}`}
                 onClick={copyMyId}
-                title="Click to copy Peer ID"
+                title="Click to share or copy Peer ID"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') copyMyId(); }}
@@ -728,6 +728,17 @@ export function ChatApp() {
                 <span className={`copy-badge ${isCopied ? 'active' : ''}`}>
                   {isCopied ? 'COPIED!' : 'SHARE'}
                 </span>
+              </div>
+
+              {/* Row 3.5: Mobile Share Invite Link Button */}
+              <div style={{ width: '100%' }}>
+                <Button
+                  label={isLinkCopied ? "✓ LINK SHARED / COPIED" : "🔗 SHARE 1-CLICK INVITE LINK"}
+                  variant="secondary"
+                  size="sm"
+                  onClick={copyInviteLink}
+                  isDisabled={!myId}
+                />
               </div>
 
               {/* Row 4: My Display Name */}

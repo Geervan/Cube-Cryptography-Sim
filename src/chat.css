@@ -260,6 +260,14 @@ html, body, #root {
     gap: 10px;
   }
 
+  .mobile-config-inner > div button {
+    width: 100% !important;
+  }
+
+  .mobile-config-inner .input-group button {
+    width: auto !important;
+  }
+
   .mobile-status-row {
     padding: 2px 0;
     font-family: var(--font-mono);
