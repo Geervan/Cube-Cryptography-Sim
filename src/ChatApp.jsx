@@ -186,16 +186,6 @@ export function ChatApp() {
         
         console.log('%c[NETWORK INCOMING] Payload: ' + ciphertext, 'color: #f59e0b; font-weight: bold;');
 
-        // Synchronize local 3D lattice to shared key baseline before decrypting stream
-        const activeKey = sharedKeyRef.current || 'DEFAULT';
-        if (cubeRef.current) {
-          cubeRef.current.initCube(activeKey);
-        }
-        if (engineRef.current) {
-          const rcs = CubeCipherEngine.generateStepConstants(activeKey, 1024);
-          engineRef.current.setStepConstants(rcs);
-        }
-
         const msgId = Date.now() + Math.random();
         setMessages(prev => [
           ...prev,
@@ -526,16 +516,6 @@ export function ChatApp() {
     ]);
 
     connRef.current.send({ type: 'SIGNAL', payload: 'START_ENC' });
-
-    // Synchronize local 3D lattice to shared key baseline before encrypting stream
-    const activeKey = sharedKeyRef.current || 'DEFAULT';
-    if (cubeRef.current) {
-      cubeRef.current.initCube(activeKey);
-    }
-    if (engineRef.current) {
-      const rcs = CubeCipherEngine.generateStepConstants(activeKey, 1024);
-      engineRef.current.setStepConstants(rcs);
-    }
 
     if (engineRef.current) {
       engineRef.current.encryptSequence(
