@@ -278,6 +278,7 @@ export function ChatApp() {
 
         if (isReceiver) {
           const currentKey = sharedKeyRef.current || 'DEFAULT';
+          if (cubeRef.current) cubeRef.current.initCube(currentKey);
           addSystemLog(`Peer linked. Broadcasting Key State (${currentKey})...`, 'default');
           conn.send({
             type: 'SYNC',
