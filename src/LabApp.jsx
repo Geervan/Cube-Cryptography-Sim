@@ -317,6 +317,12 @@ export function LabApp() {
                   <span id="sys-status">{systemStatus}</span>
                 </div>
                 <Button
+                  label="GITHUB"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => window.open('https://github.com/Geervan/Cube-Cryptography-Sim', '_blank')}
+                />
+                <Button
                   label="SECURE CHAT"
                   variant="secondary"
                   size="sm"

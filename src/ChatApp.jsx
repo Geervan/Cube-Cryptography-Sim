@@ -27,6 +27,7 @@ export function ChatApp() {
   const peerRef = useRef(null);
   const connRef = useRef(null);
   const chatScrollRef = useRef(null);
+  const lastHeartbeatRef = useRef(Date.now());
 
   // Connection & Config States
   const [myId, setMyId] = useState('');
@@ -148,8 +149,20 @@ export function ChatApp() {
       } else if (data.payload === 'COLLISION') {
         handleCollision(false);
       }
+    } else if (data.type === 'GOODBYE') {
+      setConnStatus('DISCONNECTED');
+      connRef.current = null;
+      addSystemLog('Peer closed session / left chat.', 'divider');
+      return;
     } else if (data.type === 'PING') {
-      // Keep-alive heartbeat packet
+      try {
+        if (connRef.current && connRef.current.open) {
+          connRef.current.send({ type: 'PONG' });
+        }
+      } catch (e) {}
+      return;
+    } else if (data.type === 'PONG') {
+      lastHeartbeatRef.current = Date.now();
       return;
     } else if (data.type === 'MSG') {
         setIsChannelBusy(false);
@@ -195,23 +208,48 @@ export function ChatApp() {
   const setupConnection = useCallback(
     (conn, isReceiver) => {
       connRef.current = conn;
+      lastHeartbeatRef.current = Date.now();
 
-      // Heartbeat ping interval to keep NAT holes open across carriers & firewalls
+      // Active Heartbeat ping-pong to keep NAT open and detect silent drops within seconds
       let heartbeatTimer = null;
 
       conn.on('open', () => {
         setConnStatus('CONNECTED');
         addSystemLog('Secure P2P Channel Established', 'divider');
 
+        // Hook direct WebRTC ICE connection state transitions
+        if (conn.peerConnection) {
+          conn.peerConnection.oniceconnectionstatechange = () => {
+            const state = conn.peerConnection?.iceConnectionState;
+            if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+              setConnStatus('DISCONNECTED');
+              addSystemLog('Peer disconnected from session.', 'divider');
+            }
+          };
+          conn.peerConnection.onconnectionstatechange = () => {
+            const state = conn.peerConnection?.connectionState;
+            if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+              setConnStatus('DISCONNECTED');
+              addSystemLog('Peer disconnected from session.', 'divider');
+            }
+          };
+        }
+
         heartbeatTimer = setInterval(() => {
           if (conn.open) {
             try {
               conn.send({ type: 'PING' });
-            } catch (e) {
-              // ignore
+            } catch (e) {}
+
+            // Generous 35s timeout: switching apps on mobile (e.g. to WhatsApp) will NOT drop the session
+            if (Date.now() - lastHeartbeatRef.current > 35000) {
+              setConnStatus('DISCONNECTED');
+              connRef.current = null;
+              addSystemLog('Peer timed out / connection lost.', 'divider');
+              clearInterval(heartbeatTimer);
             }
           }
-        }, 12000);
+        }, 5000);
 
         if (isReceiver) {
           const currentKey = sharedKeyRef.current || 'DEFAULT';
@@ -226,6 +264,7 @@ export function ChatApp() {
       });
 
       conn.on('data', (data) => {
+        lastHeartbeatRef.current = Date.now();
         handleIncomingData(data);
       });
 
@@ -367,9 +406,46 @@ export function ChatApp() {
       addSystemLog(`PeerJS Initialization Notice: ${e.message}`, 'default');
     }
 
+    const handleUnload = () => {
+      if (connRef.current && connRef.current.open) {
+        try {
+          connRef.current.send({ type: 'GOODBYE' });
+          connRef.current.close();
+        } catch (e) {}
+      }
+      if (peerRef.current) {
+        try {
+          peerRef.current.destroy();
+        } catch (e) {}
+      }
+    };
+
+    const handlePageHide = (e) => {
+      // If page is merely backgrounded/cached in mobile back-forward cache, do NOT kill connection
+      if (!e.persisted) {
+        handleUnload();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // When user returns from WhatsApp/other apps back to the chat tab, immediately refresh heartbeat
+      if (document.visibilityState === 'visible' && connRef.current && connRef.current.open) {
+        lastHeartbeatRef.current = Date.now();
+        try {
+          connRef.current.send({ type: 'PING' });
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
-      if (connRef.current) connRef.current.close();
-      if (peerRef.current) peerRef.current.destroy();
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      handleUnload();
       if (simulator) simulator.destroy();
     };
   }, []);
@@ -436,6 +512,21 @@ export function ChatApp() {
 
   const copyMyId = async () => {
     if (!myId) return;
+    const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 900;
+    if (navigator.share && isSmallScreen) {
+      try {
+        await navigator.share({
+          title: 'Secure Chat ID — Cube Cryptography',
+          text: `Join my secure P2P cryptographic session! My Peer ID is: ${myId}`
+        });
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // User closed share sheet
+      }
+    }
+
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(myId);
@@ -460,7 +551,25 @@ export function ChatApp() {
 
   const copyInviteLink = async () => {
     if (!myId) return;
-    const inviteUrl = `${window.location.origin}${window.location.pathname}?connect=${myId}&key=${encodeURIComponent(sharedKeyRef.current || 'DEFAULT')}`;
+    const currentKey = sharedKeyRef.current || 'DEFAULT';
+    const inviteUrl = `${window.location.origin}${window.location.pathname}?connect=${myId}&key=${encodeURIComponent(currentKey)}`;
+    const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 900;
+
+    if (navigator.share && isSmallScreen) {
+      try {
+        await navigator.share({
+          title: 'Cube Cryptography — Secure Chat Session',
+          text: `Connect to my encrypted 3D Cube Cryptography chat session! (Key: ${currentKey})`,
+          url: inviteUrl
+        });
+        setIsLinkCopied(true);
+        setTimeout(() => setIsLinkCopied(false), 2500);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // User closed share sheet
+      }
+    }
+
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(inviteUrl);
@@ -617,7 +726,7 @@ export function ChatApp() {
               >
                 <code>{myId || 'Generating ID...'}</code>
                 <span className={`copy-badge ${isCopied ? 'active' : ''}`}>
-                  {isCopied ? 'COPIED!' : 'COPY'}
+                  {isCopied ? 'COPIED!' : 'SHARE'}
                 </span>
               </div>
 
