@@ -9,10 +9,16 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
     "vite": "^7.2.4"
   },
   "dependencies": {
+    "@astryxdesign/core": "^0.6.3",
+    "@astryxdesign/theme-neutral": "^0.6.3",
+    "@stylexjs/stylex": "^0.19.1",
     "peerjs": "^1.5.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "three": "^0.182.0"
   }
 }

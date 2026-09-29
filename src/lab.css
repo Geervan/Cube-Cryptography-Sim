@@ -1,0 +1,1023 @@
+/* Cube Cryptography — Astryx Neutral Theme Integration for Lab */
+@import "./astryx_theme.css";
+
+:root {
+  --bg-color: var(--color-background-body, #141416);
+  --panel-bg: var(--color-background-surface, #1e1e24);
+  --text-main: var(--color-text-primary, #ededed);
+  --text-muted: var(--color-text-secondary, #9da3af);
+  --accent-color: var(--color-success, #00ff88);
+  --border-color: var(--color-border, rgba(255, 255, 255, 0.12));
+
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: 'Space Grotesk', 'Figtree', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+.lab-app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+}
+
+/* 1. HEADER (ASTRYX TOPNAV) */
+.lab-header {
+  border-bottom: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 50;
+  padding: 6px 20px;
+}
+
+.lab-header [data-astryx-component="TopNav"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 4px 8px !important;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.version {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.4rem;
+  font-weight: 400;
+}
+
+.credit-badge {
+  font-size: 0.75rem;
+  color: #3b82f6;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.credit-badge:hover {
+  opacity: 0.85;
+  text-decoration: underline;
+}
+
+.mode-selector {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+/* Header Right Actions */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 8px;
+}
+
+.status-indicator {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+}
+
+/* Astryx Button & Segmented Control Spacing & Padding */
+button,
+.astryx-button,
+[class*="astryx-button"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 18px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.85rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius-element, 6px) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  text-decoration: none !important;
+}
+
+/* Size sm */
+.astryx-button.sm,
+[class*="astryx-button"].sm,
+button[data-size="sm"],
+.step-controls button,
+.lab-header button {
+  padding: 6px 14px !important;
+  font-size: 0.78rem !important;
+  min-height: 32px !important;
+}
+
+/* Size md */
+.astryx-button.md,
+[class*="astryx-button"].md,
+button[data-size="md"],
+.btn-row button {
+  padding: 10px 20px !important;
+  font-size: 0.85rem !important;
+  min-height: 38px !important;
+}
+
+/* Size lg / Primary Action */
+.astryx-button.lg,
+[class*="astryx-button"].lg,
+button[data-size="lg"],
+.primary-action-btn,
+.guide-footer button {
+  padding: 12px 26px !important;
+  font-size: 0.92rem !important;
+  min-height: 44px !important;
+  font-weight: 600 !important;
+}
+
+/* Astryx Segmented Control Spacing & Clear Visual Feedback (White Active Tab) */
+.astryx-segmented-control,
+[class*="astryx-segmented-control"],
+[role="radiogroup"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: #000000 !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-element, 4px) !important;
+  padding: 3px !important;
+  gap: 3px !important;
+}
+
+/* Inactive Segmented Item */
+.astryx-segmented-control-item,
+[class*="astryx-segmented-control-item"],
+[role="radiogroup"] [role="radio"],
+[role="radiogroup"] button {
+  padding: 6px 22px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  border-radius: 2px !important;
+  cursor: pointer !important;
+  min-height: 32px !important;
+  min-width: 96px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+  color: #888888 !important;
+  border: 1px solid transparent !important;
+}
+
+.astryx-segmented-control-item:hover:not([aria-checked="true"]),
+[role="radiogroup"] [role="radio"]:hover:not([aria-checked="true"]) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+/* Highly Obvious Active State — Astryx Royal Blue */
+.astryx-segmented-control-item[aria-checked="true"],
+.astryx-segmented-control-item[data-state="active"],
+.astryx-segmented-control-item[data-selected="true"],
+.astryx-segmented-control-item.selected,
+[role="radiogroup"] [role="radio"][aria-checked="true"],
+[role="radiogroup"] button[aria-checked="true"] {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3) !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Button Variants */
+.astryx-button.primary,
+button[data-variant="primary"],
+.primary-action-btn,
+.guide-footer button {
+  background: #ffffff !important;
+  color: #09090b !important;
+  border: 1px solid #ffffff !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+}
+
+.astryx-button.primary:hover:not(:disabled),
+button[data-variant="primary"]:hover:not(:disabled),
+.primary-action-btn:hover:not(:disabled),
+.guide-footer button:hover:not(:disabled) {
+  background: #e4e4e7 !important;
+  border-color: #e4e4e7 !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.3) !important;
+}
+
+.astryx-button.secondary,
+button[data-variant="secondary"] {
+  background: #27272a !important;
+  color: #f4f4f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+}
+
+.astryx-button.secondary:hover:not(:disabled),
+button[data-variant="secondary"]:hover:not(:disabled) {
+  background: #3f3f46 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.astryx-button.secondary:hover:not(:disabled),
+button[data-variant="secondary"]:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.astryx-button.subtle,
+button[data-variant="subtle"] {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border: 1px solid transparent !important;
+}
+
+.astryx-button.subtle:hover:not(:disabled),
+button[data-variant="subtle"]:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-main) !important;
+}
+
+/* 2. WORKSPACE LAYOUT */
+.lab-workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 340px 1fr 340px;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  background: var(--bg-color);
+}
+
+/* Panels */
+.panel {
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  gap: 1.25rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.right-panel {
+  border-right: none;
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Desktop layout order: System Kernel & State Hash above Output Stream */
+.right-panel .panel-header {
+  order: 1;
+}
+
+.right-panel .monitor-group {
+  order: 2;
+}
+
+.right-panel .process-monitor {
+  order: 3;
+}
+
+.right-panel .output-stream-group {
+  order: 4;
+}
+
+.panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel-header h2 {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.line-deco {
+  height: 1px;
+  background: var(--border-color);
+  width: 100%;
+}
+
+/* Controls */
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Astryx Neutral Theme Input & TextArea Integration */
+[data-theme-component="field"],
+[data-astryx-component="Field"] {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+[data-theme-component="field"] label,
+[data-astryx-component="Field"] label,
+.control-group label {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace) !important;
+  font-size: 0.74rem !important;
+  color: var(--text-muted, #9da3af) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-weight: 600 !important;
+  margin-bottom: 2px !important;
+}
+
+/* Roomy, Dark Sunken Field Containers */
+[data-theme-component="text-input"],
+[data-astryx-component="TextInput"] > div,
+div[data-theme-component="field"] > div:last-child {
+  background: #141418 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+[data-theme-component="text-area"],
+[data-astryx-component="TextArea"] > div {
+  background: #141418 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px !important;
+  padding: 12px 14px !important;
+  min-height: 110px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* Hover State */
+[data-theme-component="text-input"]:hover,
+[data-theme-component="text-area"]:hover,
+[data-astryx-component="TextInput"] > div:hover,
+[data-astryx-component="TextArea"] > div:hover {
+  border-color: rgba(255, 255, 255, 0.24) !important;
+}
+
+/* Focus State */
+[data-theme-component="text-input"]:focus-within,
+[data-theme-component="text-area"]:focus-within,
+[data-astryx-component="TextInput"] > div:focus-within,
+[data-astryx-component="TextArea"] > div:focus-within {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6, 0 0 10px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Inner Native Elements - Inset from border for generous cursor clearance */
+[data-theme-component="text-input"] input,
+[data-theme-component="text-area"] textarea,
+[data-astryx-component="TextInput"] input,
+[data-astryx-component="TextArea"] textarea,
+.panel input[type="text"],
+.panel textarea {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace) !important;
+  font-size: 0.86rem !important;
+  color: #ededed !important;
+  caret-color: #3b82f6 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 4px 8px !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  resize: none !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* High-contrast, clean readable placeholder */
+[data-theme-component="text-input"] input::placeholder,
+[data-theme-component="text-area"] textarea::placeholder,
+[data-astryx-component="TextInput"] input::placeholder,
+[data-astryx-component="TextArea"] textarea::placeholder,
+.panel input::placeholder,
+.panel textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace) !important;
+  font-size: 0.84rem !important;
+  color: #71717a !important;
+  opacity: 1 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-row > * {
+  flex: 1;
+}
+
+.primary-action-btn {
+  width: 100%;
+}
+
+.step-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 4px 0;
+}
+
+.toggle-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  accent-color: var(--color-accent, #00ff88);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.speed-subgroup {
+  margin-top: 16px;
+  padding-top: 8px;
+  padding-bottom: 10px;
+}
+
+.speed-subgroup [data-astryx-component="Slider"] {
+  margin-top: 8px !important;
+}
+
+/* 3. CENTER VIEWPORT */
+.viewport {
+  position: relative;
+  background: var(--bg-color);
+  cursor: grab;
+  overflow: hidden;
+}
+
+.viewport:active {
+  cursor: grabbing;
+}
+
+.viewport-canvas-host {
+  width: 100%;
+  height: 100%;
+}
+
+.viewport-canvas-host canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.overlay-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.4);
+}
+
+.reticle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--border-color);
+  border-style: solid;
+  opacity: 0.6;
+}
+
+.reticle-tl {
+  top: 20px;
+  left: 20px;
+  border-width: 1px 0 0 1px;
+}
+
+.reticle-tr {
+  top: 20px;
+  right: 20px;
+  border-width: 1px 1px 0 0;
+}
+
+.reticle-bl {
+  bottom: 20px;
+  left: 20px;
+  border-width: 0 0 1px 1px;
+}
+
+.reticle-br {
+  bottom: 20px;
+  right: 20px;
+  border-width: 0 1px 1px 0;
+}
+
+/* 4. RIGHT PANEL: SYSTEM KERNEL */
+.readout-display {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: 0.1em;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-element, 6px);
+}
+
+.process-monitor {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-container, 8px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.proc-step-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 8px;
+  font-family: var(--font-mono);
+}
+
+.step-value {
+  font-weight: bold;
+  color: var(--color-accent, #6d9cfe);
+}
+
+.flow-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 12px 6px;
+  border-radius: var(--radius-element, 6px);
+  border: 1px solid var(--border-color);
+}
+
+.flow-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 58px;
+}
+
+.flow-label {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+}
+
+.flow-val {
+  font-size: 1.35rem;
+  font-weight: bold;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+}
+
+.flow-sub {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.flow-card.sensor .flow-val {
+  color: #38bdf8;
+}
+
+.flow-card.rc .flow-val {
+  color: #a78bfa;
+}
+
+.flow-card.output .flow-val {
+  color: #34d399;
+}
+
+.flow-op {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-weight: bold;
+  font-family: var(--font-mono);
+}
+
+.math-display {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 10px;
+  border-radius: var(--radius-element, 6px);
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.math-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+}
+
+.math-val {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-main);
+}
+
+/* 5. RESEARCH GUIDE MODAL */
+#guide-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+/* Unopened Dialog MUST be hidden with pointer-events: none */
+dialog:not([open]) {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Astryx Dialog & Research Guide Modal Styling - ONLY when open */
+dialog[open] {
+  display: flex !important;
+  flex-direction: column !important;
+  inset: 0 !important;
+  margin: auto !important;
+  padding: 0 !important;
+  width: 540px !important;
+  max-width: min(90vw, 560px) !important;
+  height: fit-content !important;
+  max-height: 88vh !important;
+  overflow: visible !important;
+  background: var(--panel-bg, #1a1e29) !important;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14)) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  z-index: 1000 !important;
+  pointer-events: auto !important;
+}
+
+dialog[open] > div,
+dialog[open] [data-theme-component="dialog"] > div {
+  padding: 24px 28px 28px 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+.guide-body-astryx {
+  padding: 16px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.guide-body-astryx section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide-body-astryx h3 {
+  color: var(--color-accent, #00ff88) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.05em !important;
+  margin: 0 !important;
+}
+
+.guide-body-astryx p {
+  margin: 0 !important;
+  font-size: 0.86rem !important;
+  color: var(--text-muted, #9da3af) !important;
+  line-height: 1.5 !important;
+}
+
+.guide-footer-astryx {
+  display: flex !important;
+  justify-content: flex-end !important;
+  padding-top: 16px !important;
+  padding-bottom: 4px !important;
+  border-top: 1px solid var(--border-color) !important;
+  margin-top: 4px !important;
+}
+
+/* =========================================================================
+   6. RESPONSIVE WORKSPACE (Mobile / Tablet Layout)
+   ========================================================================= */
+
+@media (max-width: 1024px) {
+  body {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .lab-app-container {
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+
+  .lab-workspace {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: calc(100vh - 60px) !important;
+    overflow: visible !important;
+  }
+
+  /* 1. 3D Cube Viewport sits on TOP */
+  .viewport {
+    order: 1 !important;
+    width: 100% !important;
+    height: 380px !important;
+    min-height: 380px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 2. Left Parameters Panel sits below cube */
+  .panel.left-panel,
+  .panel:first-child {
+    order: 2 !important;
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    overflow: visible !important;
+  }
+
+  /* 3. Right Telemetry Panel sits at bottom */
+  .right-panel {
+    order: 3 !important;
+    width: 100% !important;
+    border-left: none !important;
+    overflow: visible !important;
+  }
+
+  /* Mobile: Output stream placed before hash & kernel */
+  .right-panel .output-stream-group {
+    order: 1 !important;
+  }
+
+  .right-panel .panel-header {
+    order: 2 !important;
+  }
+
+  .right-panel .monitor-group {
+    order: 3 !important;
+  }
+
+  .right-panel .process-monitor {
+    order: 4 !important;
+  }
+
+  .flow-container {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+
+  .flow-card {
+    min-width: 62px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .lab-header {
+    padding: 12px 16px !important;
+    height: auto !important;
+    background: var(--panel-bg);
+  }
+
+  .lab-header nav,
+  .lab-header [data-astryx-component="TopNav"],
+  .lab-header [class*="astryx-top-nav"] {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .lab-header nav > div,
+  .lab-header [data-astryx-component="TopNav"] > div,
+  .lab-header [class*="astryx-top-nav"] > div {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+
+  /* Row 1: Header Brand Title & Credit */
+  .header-left {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    gap: 2px !important;
+    padding: 0 !important;
+  }
+
+  .logo {
+    font-size: 1.15rem !important;
+    text-align: center !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .credit-badge {
+    text-align: center !important;
+    font-size: 0.78rem !important;
+    color: #3b82f6 !important;
+  }
+
+  /* Row 2: Mode Selector Segmented Control */
+  .mode-selector {
+    width: 100% !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .mode-selector [role="radiogroup"],
+  .mode-selector [data-astryx-component="SegmentedControl"] {
+    width: 100% !important;
+    display: flex !important;
+  }
+
+  .mode-selector [role="radiogroup"] [role="radio"],
+  .mode-selector [data-astryx-component="SegmentedControlItem"] {
+    flex: 1 !important;
+    text-align: center !important;
+    justify-content: center !important;
+    min-height: 34px !important;
+  }
+
+  /* Row 3: Action Buttons Row */
+  .header-right {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 6px !important;
+    padding: 0 !important;
+  }
+
+  .header-right button,
+  .header-right [data-astryx-component="Button"] {
+    flex: 1 !important;
+    padding: 6px 8px !important;
+    font-size: 0.74rem !important;
+    min-height: 32px !important;
+    justify-content: center !important;
+  }
+
+  .status-indicator {
+    padding: 2px 4px !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+    flex: 1.1 !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  .viewport {
+    height: 320px !important;
+    min-height: 320px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .viewport {
+    height: 280px !important;
+    min-height: 280px !important;
+  }
+
+  .header-right button,
+  .header-right [data-astryx-component="Button"] {
+    padding: 5px 6px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .flow-container {
+    gap: 4px !important;
+  }
+
+  .flow-card {
+    padding: 6px 8px !important;
+    min-width: 52px !important;
+  }
+
+  .flow-val {
+    font-size: 1rem !important;
+  }
+
+  .flow-op {
+    font-size: 0.9rem !important;
+  }
+
+  .panel {
+    padding: 1rem !important;
+    gap: 1rem !important;
+  }
+}
