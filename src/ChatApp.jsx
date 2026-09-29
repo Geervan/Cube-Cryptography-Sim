@@ -40,9 +40,12 @@ export function ChatApp() {
   const [connStatus, setConnStatus] = useState('DISCONNECTED'); // 'DISCONNECTED' | 'CONNECTED' | 'COLLISION'
   const [inputText, setInputText] = useState('');
   const [isChannelBusy, setIsChannelBusy] = useState(false);
+  const isChannelBusyRef = useRef(false);
+  const [channelStatusText, setChannelStatusText] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const handleIncomingDataRef = useRef(null);
 
   // Parse URL invite parameters on mount
   useEffect(() => {
@@ -163,20 +166,28 @@ export function ChatApp() {
       }
     } else if (data.type === 'SIGNAL') {
       if (data.payload === 'START_STREAM' || data.payload === 'START_ENC') {
-        if (isChannelBusy) {
+        if (isChannelBusyRef.current) {
           handleCollision(true);
         } else {
+          isChannelBusyRef.current = true;
           setIsChannelBusy(true);
-          addSystemLog('Incoming encrypted stream detected...', 'default');
+          setChannelStatusText('DECRYPTING INCOMING STREAM...');
+          addSystemLog('Incoming encrypted stream detected — Decrypting 3D lattice...', 'default');
         }
       } else if (data.payload === 'STREAM_DONE') {
+        isChannelBusyRef.current = false;
         setIsChannelBusy(false);
+        setChannelStatusText('');
+        addSystemLog('Peer completed 3D decryption. Channel ready.', 'default');
       } else if (data.payload === 'COLLISION') {
         handleCollision(false);
       }
     } else if (data.type === 'GOODBYE') {
       setConnStatus('DISCONNECTED');
       connRef.current = null;
+      isChannelBusyRef.current = false;
+      setIsChannelBusy(false);
+      setChannelStatusText('');
       addSystemLog('Peer closed session / left chat.', 'divider');
       return;
     } else if (data.type === 'PING') {
@@ -190,7 +201,9 @@ export function ChatApp() {
       lastHeartbeatRef.current = Date.now();
       return;
     } else if (data.type === 'MSG') {
+        isChannelBusyRef.current = true;
         setIsChannelBusy(true);
+        setChannelStatusText('DECRYPTING 3D LATTICE...');
         const ciphertext = data.payload || '';
         const senderAlias = data.alias || 'PEER';
         
@@ -223,7 +236,9 @@ export function ChatApp() {
               );
             },
             (fullPlaintext) => {
+              isChannelBusyRef.current = false;
               setIsChannelBusy(false);
+              setChannelStatusText('');
               if (connRef.current && connRef.current.open) {
                 try {
                   connRef.current.send({ type: 'SIGNAL', payload: 'STREAM_DONE' });
@@ -234,8 +249,10 @@ export function ChatApp() {
         }
       }
     },
-    [isChannelBusy, handleCollision, addSystemLog]
+    [handleCollision, addSystemLog]
   );
+
+  handleIncomingDataRef.current = handleIncomingData;
 
   // Handle incoming connection
   const setupConnection = useCallback(
@@ -246,7 +263,21 @@ export function ChatApp() {
       // Active Heartbeat ping-pong to keep NAT open and detect silent drops within seconds
       let heartbeatTimer = null;
 
+      let isDisconnectedLogged = false;
+      const markDisconnected = (reason = 'Peer disconnected from session.') => {
+        if (!isDisconnectedLogged) {
+          isDisconnectedLogged = true;
+          setConnStatus('DISCONNECTED');
+          connRef.current = null;
+          isChannelBusyRef.current = false;
+          setIsChannelBusy(false);
+          setChannelStatusText('');
+          addSystemLog(reason, 'divider');
+        }
+      };
+
       conn.on('open', () => {
+        isDisconnectedLogged = false;
         setConnStatus('CONNECTED');
         addSystemLog('Secure P2P Channel Established', 'divider');
 
@@ -255,15 +286,13 @@ export function ChatApp() {
           conn.peerConnection.oniceconnectionstatechange = () => {
             const state = conn.peerConnection?.iceConnectionState;
             if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-              setConnStatus('DISCONNECTED');
-              addSystemLog('Peer disconnected from session.', 'divider');
+              markDisconnected('Peer disconnected from session.');
             }
           };
           conn.peerConnection.onconnectionstatechange = () => {
             const state = conn.peerConnection?.connectionState;
             if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-              setConnStatus('DISCONNECTED');
-              addSystemLog('Peer disconnected from session.', 'divider');
+              markDisconnected('Peer disconnected from session.');
             }
           };
         }
@@ -276,9 +305,7 @@ export function ChatApp() {
 
             // Generous 35s timeout: switching apps on mobile (e.g. to WhatsApp) will NOT drop the session
             if (Date.now() - lastHeartbeatRef.current > 35000) {
-              setConnStatus('DISCONNECTED');
-              connRef.current = null;
-              addSystemLog('Peer timed out / connection lost.', 'divider');
+              markDisconnected('Peer timed out / connection lost.');
               clearInterval(heartbeatTimer);
             }
           }
@@ -307,14 +334,12 @@ export function ChatApp() {
 
       conn.on('data', (data) => {
         lastHeartbeatRef.current = Date.now();
-        handleIncomingData(data);
+        handleIncomingDataRef.current?.(data);
       });
 
       conn.on('close', () => {
         if (heartbeatTimer) clearInterval(heartbeatTimer);
-        setConnStatus('DISCONNECTED');
-        connRef.current = null;
-        addSystemLog('Peer disconnected from session', 'divider');
+        markDisconnected('Peer disconnected from session.');
       });
 
       conn.on('error', (err) => {
@@ -513,10 +538,15 @@ export function ChatApp() {
       return;
     }
 
-    if (isChannelBusy) return;
+    if (isChannelBusyRef.current) {
+      addSystemLog('Channel is busy. Please wait for 3D lattice processing to finish.', 'default');
+      return;
+    }
 
     setInputText('');
+    isChannelBusyRef.current = true;
     setIsChannelBusy(true);
+    setChannelStatusText('TRANSMITTING ENCRYPTED STREAM...');
 
     const senderName = alias.trim() || 'AGENT';
     const msgId = Date.now() + Math.random();
@@ -555,6 +585,7 @@ export function ChatApp() {
         },
         (fullCiphertext) => {
           console.log('%c[NETWORK OUTGOING] Payload: ' + fullCiphertext, 'color: #00ff88; font-weight: bold;');
+          setChannelStatusText('WAITING FOR PEER 3D DECRYPTION...');
           connRef.current.send({
             type: 'MSG',
             alias: senderName,
@@ -562,8 +593,12 @@ export function ChatApp() {
           });
           // Auto unlock on timeout fallback if ack packet is lost
           setTimeout(() => {
-            setIsChannelBusy(false);
-          }, 12000);
+            if (isChannelBusyRef.current) {
+              isChannelBusyRef.current = false;
+              setIsChannelBusy(false);
+              setChannelStatusText('');
+            }
+          }, 15000);
         }
       );
     }
@@ -884,8 +919,8 @@ export function ChatApp() {
                 label="Type encrypted message..."
                 isLabelHidden
                 placeholder={
-                  isChannelBusy
-                    ? 'CHANNEL BUSY - TRANSMITTING ENCRYPTED STREAM...'
+                  channelStatusText
+                    ? `[LOCKED] ${channelStatusText}`
                     : 'Type encrypted message...'
                 }
                 value={inputText}
@@ -896,13 +931,19 @@ export function ChatApp() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    handleSendMessage();
+                    if (!isChannelBusyRef.current && connStatus === 'CONNECTED') {
+                      handleSendMessage();
+                    }
                   }
                 }}
                 width="100%"
               />
               <Button
-                label="SEND"
+                label={
+                  channelStatusText
+                    ? 'LOCKED'
+                    : 'SEND'
+                }
                 variant="secondary"
                 size="md"
                 onClick={handleSendMessage}
