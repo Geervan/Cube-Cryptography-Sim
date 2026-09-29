@@ -33,7 +33,8 @@ export function ChatApp() {
   const [myId, setMyId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [alias, setAlias] = useState('');
-  const [sharedKey, setSharedKey] = useState('');
+  const [keyInput, setKeyInput] = useState('');
+  const [activeKey, setActiveKey] = useState('DEFAULT');
   const sharedKeyRef = useRef('DEFAULT');
   const [connStatus, setConnStatus] = useState('DISCONNECTED'); // 'DISCONNECTED' | 'CONNECTED' | 'COLLISION'
   const [inputText, setInputText] = useState('');
@@ -42,14 +43,15 @@ export function ChatApp() {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Sync ref whenever state changes and parse URL invite parameters on mount
+  // Parse URL invite parameters on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const targetParam = params.get('connect') || params.get('target');
       const keyParam = params.get('key');
       if (keyParam) {
-        setSharedKey(keyParam);
+        setKeyInput(keyParam);
+        setActiveKey(keyParam);
         sharedKeyRef.current = keyParam;
       }
       if (targetParam) {
@@ -57,12 +59,6 @@ export function ChatApp() {
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (sharedKey) {
-      sharedKeyRef.current = sharedKey;
-    }
-  }, [sharedKey]);
 
   // Message Stream
   const [messages, setMessages] = useState([
@@ -95,10 +91,13 @@ export function ChatApp() {
     ]);
   }, []);
 
-  // Initialize Key
+  // Initialize & Commit Key
   const handleSetKey = useCallback((keyToSet, broadcast = true) => {
-    const key = (keyToSet !== undefined && keyToSet !== '' ? keyToSet : sharedKeyRef.current) || 'DEFAULT';
-    setSharedKey(key);
+    const rawKey = keyToSet !== undefined && keyToSet !== '' ? keyToSet : keyInput;
+    const key = (rawKey && rawKey.trim() !== '') ? rawKey.trim() : 'DEFAULT';
+    
+    setKeyInput(key);
+    setActiveKey(key);
     sharedKeyRef.current = key;
 
     if (cubeRef.current) {
@@ -120,7 +119,7 @@ export function ChatApp() {
         payload: { key }
       });
     }
-  }, [addSystemLog]);
+  }, [keyInput, addSystemLog]);
 
   // Collision
   const handleCollision = useCallback((isInitiator = false) => {
@@ -142,7 +141,8 @@ export function ChatApp() {
     if (data.type === 'SYNC') {
       const newKey = data.payload.key || 'DEFAULT';
       addSystemLog(`Synchronizing 3D Cube Crypto Lattice to Host Key: ${newKey}`, 'default');
-      setSharedKey(newKey);
+      setKeyInput(newKey);
+      setActiveKey(newKey);
       sharedKeyRef.current = newKey;
 
       if (cubeRef.current) {
@@ -284,7 +284,16 @@ export function ChatApp() {
             payload: { key: currentKey }
           });
         } else {
-          addSystemLog('Joined channel. Awaiting Host Key synchronization...', 'default');
+          const currentKey = sharedKeyRef.current;
+          if (currentKey && currentKey !== 'DEFAULT') {
+            addSystemLog(`Broadcasting active key (${currentKey}) to host...`, 'default');
+            conn.send({
+              type: 'SYNC',
+              payload: { key: currentKey }
+            });
+          } else {
+            addSystemLog('Joined channel. Awaiting Host Key synchronization...', 'default');
+          }
         }
       });
 
@@ -344,11 +353,11 @@ export function ChatApp() {
       if (simulator.controls) {
         simulator.controls.update();
       }
-      simulator.initCube(sharedKey || 'DEFAULT');
+      simulator.initCube(sharedKeyRef.current || 'DEFAULT');
       simulator.setSpeed(6.8);
 
       const engine = new CubeCipherEngine(simulator);
-      const rcs = CubeCipherEngine.generateStepConstants(sharedKey || 'DEFAULT', 1024);
+      const rcs = CubeCipherEngine.generateStepConstants(sharedKeyRef.current || 'DEFAULT', 1024);
       console.log('%c[CHAT_SYNC] Generated Key-Dependent RC Table:', 'color: #00ff88; font-weight: bold;', rcs);
       engine.setStepConstants(rcs);
       engineRef.current = engine;
@@ -692,7 +701,7 @@ export function ChatApp() {
               <div className="desktop-header-controls">
                 <div className="key-indicator" title="Active Shared Key">
                   <span className="key-tag">KEY:</span>
-                  <code>{sharedKey || 'DEFAULT'}</code>
+                  <code>{activeKey || 'DEFAULT'}</code>
                 </div>
                 <Button
                   label={isLinkCopied ? "✓ LINK COPIED" : "🔗 INVITE LINK"}
@@ -742,15 +751,18 @@ export function ChatApp() {
                   label="Enter Key"
                   isLabelHidden
                   placeholder="ENTER KEY"
-                  value={sharedKey}
-                  onChange={(val) => setSharedKey(val)}
+                  value={keyInput}
+                  onChange={(val) => setKeyInput(val)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSetKey(keyInput, true);
+                  }}
                   width="100%"
                 />
                 <Button
                   label="SET"
                   variant="secondary"
                   size="sm"
-                  onClick={() => handleSetKey(sharedKey, true)}
+                  onClick={() => handleSetKey(keyInput, true)}
                 />
               </div>
 
@@ -914,15 +926,18 @@ export function ChatApp() {
                   label="Shared Key"
                   isLabelHidden
                   placeholder="Enter Shared Key..."
-                  value={sharedKey}
-                  onChange={(val) => setSharedKey(val)}
+                  value={keyInput}
+                  onChange={(val) => setKeyInput(val)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSetKey(keyInput, true);
+                  }}
                   width="100%"
                 />
                 <Button
                   label="SET"
                   variant="secondary"
                   size="sm"
-                  onClick={() => handleSetKey(sharedKey, true)}
+                  onClick={() => handleSetKey(keyInput, true)}
                 />
               </div>
             </div>
