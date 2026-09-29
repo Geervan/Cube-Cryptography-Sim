@@ -42,7 +42,22 @@ export function ChatApp() {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Sync ref whenever state changes
+  // Sync ref whenever state changes and parse URL invite parameters on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const targetParam = params.get('connect') || params.get('target');
+      const keyParam = params.get('key');
+      if (keyParam) {
+        setSharedKey(keyParam);
+        sharedKeyRef.current = keyParam;
+      }
+      if (targetParam) {
+        setTargetId(targetParam);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (sharedKey) {
       sharedKeyRef.current = sharedKey;
@@ -170,6 +185,16 @@ export function ChatApp() {
         const senderAlias = data.alias || 'PEER';
         
         console.log('%c[NETWORK INCOMING] Payload: ' + ciphertext, 'color: #f59e0b; font-weight: bold;');
+
+        // Synchronize local 3D lattice to shared key baseline before decrypting stream
+        const activeKey = sharedKeyRef.current || 'DEFAULT';
+        if (cubeRef.current) {
+          cubeRef.current.initCube(activeKey);
+        }
+        if (engineRef.current) {
+          const rcs = CubeCipherEngine.generateStepConstants(activeKey, 1024);
+          engineRef.current.setStepConstants(rcs);
+        }
 
         const msgId = Date.now() + Math.random();
         setMessages(prev => [
@@ -370,6 +395,17 @@ export function ChatApp() {
       peer.on('open', (id) => {
         setMyId(id);
         addSystemLog('Ready. Share your ID or paste a Target ID to connect.', 'default');
+
+        // Auto-connect if joining via 1-click invite link
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const autoTarget = params.get('connect') || params.get('target');
+          if (autoTarget && autoTarget !== id) {
+            addSystemLog(`Auto-connecting to invite Host: ${autoTarget.slice(0, 8)}...`, 'default');
+            const conn = peer.connect(autoTarget, { reliable: true, serialization: 'json' });
+            setupConnection(conn, false);
+          }
+        }
       });
 
       peer.on('connection', (conn) => {
@@ -481,6 +517,16 @@ export function ChatApp() {
 
     connRef.current.send({ type: 'SIGNAL', payload: 'START_ENC' });
 
+    // Synchronize local 3D lattice to shared key baseline before encrypting stream
+    const activeKey = sharedKeyRef.current || 'DEFAULT';
+    if (cubeRef.current) {
+      cubeRef.current.initCube(activeKey);
+    }
+    if (engineRef.current) {
+      const rcs = CubeCipherEngine.generateStepConstants(activeKey, 1024);
+      engineRef.current.setStepConstants(rcs);
+    }
+
     if (engineRef.current) {
       engineRef.current.encryptSequence(
         raw,
@@ -517,7 +563,7 @@ export function ChatApp() {
       try {
         await navigator.share({
           title: 'Secure Chat ID — Cube Cryptography',
-          text: `Join my secure P2P cryptographic session! My Peer ID is: ${myId}`
+          text: `${myId}`
         });
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
