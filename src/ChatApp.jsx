@@ -36,6 +36,7 @@ export function ChatApp() {
   const [keyInput, setKeyInput] = useState('');
   const [activeKey, setActiveKey] = useState('DEFAULT');
   const sharedKeyRef = useRef('DEFAULT');
+  const moveHistoryRef = useRef([]);
   const [connStatus, setConnStatus] = useState('DISCONNECTED'); // 'DISCONNECTED' | 'CONNECTED' | 'COLLISION'
   const [inputText, setInputText] = useState('');
   const [isChannelBusy, setIsChannelBusy] = useState(false);
@@ -99,6 +100,7 @@ export function ChatApp() {
     setKeyInput(key);
     setActiveKey(key);
     sharedKeyRef.current = key;
+    moveHistoryRef.current = [];
 
     if (cubeRef.current) {
       cubeRef.current.initCube(key);
@@ -147,6 +149,12 @@ export function ChatApp() {
 
       if (cubeRef.current) {
         cubeRef.current.initCube(newKey);
+        if (data.payload.moves && Array.isArray(data.payload.moves) && data.payload.moves.length > 0) {
+          cubeRef.current.applyMovesInstant(data.payload.moves);
+          moveHistoryRef.current = [...data.payload.moves];
+        } else {
+          moveHistoryRef.current = [];
+        }
       }
       if (engineRef.current) {
         const rcs = CubeCipherEngine.generateStepConstants(newKey, 1024);
@@ -154,13 +162,15 @@ export function ChatApp() {
         engineRef.current.setStepConstants(rcs);
       }
     } else if (data.type === 'SIGNAL') {
-      if (data.payload === 'START_ENC') {
+      if (data.payload === 'START_STREAM' || data.payload === 'START_ENC') {
         if (isChannelBusy) {
           handleCollision(true);
         } else {
           setIsChannelBusy(true);
           addSystemLog('Incoming encrypted stream detected...', 'default');
         }
+      } else if (data.payload === 'STREAM_DONE') {
+        setIsChannelBusy(false);
       } else if (data.payload === 'COLLISION') {
         handleCollision(false);
       }
@@ -180,7 +190,7 @@ export function ChatApp() {
       lastHeartbeatRef.current = Date.now();
       return;
     } else if (data.type === 'MSG') {
-        setIsChannelBusy(false);
+        setIsChannelBusy(true);
         const ciphertext = data.payload || '';
         const senderAlias = data.alias || 'PEER';
         
@@ -203,6 +213,9 @@ export function ChatApp() {
             ciphertext,
             'A',
             (char, idx, details) => {
+              if (details.move) {
+                moveHistoryRef.current.push(details.move);
+              }
               setMessages(currentMsgs =>
                 currentMsgs.map(m =>
                   m.id === msgId ? { ...m, plaintext: (m.plaintext || '') + details.p } : m
@@ -210,7 +223,12 @@ export function ChatApp() {
               );
             },
             (fullPlaintext) => {
-              // Successfully decrypted purely via physical 3D cube lattice permutation mathematics
+              setIsChannelBusy(false);
+              if (connRef.current && connRef.current.open) {
+                try {
+                  connRef.current.send({ type: 'SIGNAL', payload: 'STREAM_DONE' });
+                } catch (e) {}
+              }
             }
           );
         }
@@ -268,11 +286,10 @@ export function ChatApp() {
 
         if (isReceiver) {
           const currentKey = sharedKeyRef.current || 'DEFAULT';
-          if (cubeRef.current) cubeRef.current.initCube(currentKey);
-          addSystemLog(`Peer linked. Broadcasting Key State (${currentKey})...`, 'default');
+          addSystemLog(`Peer linked. Broadcasting Key State (${currentKey}) & ${moveHistoryRef.current.length} cumulative moves...`, 'default');
           conn.send({
             type: 'SYNC',
-            payload: { key: currentKey }
+            payload: { key: currentKey, moves: moveHistoryRef.current }
           });
         } else {
           const currentKey = sharedKeyRef.current;
@@ -280,7 +297,7 @@ export function ChatApp() {
             addSystemLog(`Broadcasting active key (${currentKey}) to host...`, 'default');
             conn.send({
               type: 'SYNC',
-              payload: { key: currentKey }
+              payload: { key: currentKey, moves: moveHistoryRef.current }
             });
           } else {
             addSystemLog('Joined channel. Awaiting Host Key synchronization...', 'default');
@@ -515,13 +532,16 @@ export function ChatApp() {
       }
     ]);
 
-    connRef.current.send({ type: 'SIGNAL', payload: 'START_ENC' });
+    connRef.current.send({ type: 'SIGNAL', payload: 'START_STREAM' });
 
     if (engineRef.current) {
       engineRef.current.encryptSequence(
         raw,
         'A',
         (char, idx, details) => {
+          if (details.move) {
+            moveHistoryRef.current.push(details.move);
+          }
           setMessages(currentMsgs =>
             currentMsgs.map(m =>
               m.id === msgId
@@ -534,13 +554,16 @@ export function ChatApp() {
           );
         },
         (fullCiphertext) => {
-          setIsChannelBusy(false);
           console.log('%c[NETWORK OUTGOING] Payload: ' + fullCiphertext, 'color: #00ff88; font-weight: bold;');
           connRef.current.send({
             type: 'MSG',
             alias: senderName,
             payload: fullCiphertext
           });
+          // Auto unlock on timeout fallback if ack packet is lost
+          setTimeout(() => {
+            setIsChannelBusy(false);
+          }, 12000);
         }
       );
     }

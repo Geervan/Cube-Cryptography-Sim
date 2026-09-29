@@ -445,6 +445,64 @@ export class CubeSimulator {
         tick();
     }
 
+    applyMoveInstant(moveStr) {
+        if (!moveStr) return;
+        let axis = '';
+        let layerVal = 0;
+        let angle = -Math.PI / 2;
+
+        const face = moveStr[0];
+        const isPrime = moveStr.includes("'");
+
+        switch (face) {
+            case 'U': axis = 'y'; layerVal = 1; break;
+            case 'D': axis = 'y'; layerVal = -1; break;
+            case 'L': axis = 'x'; layerVal = -1; break;
+            case 'R': axis = 'x'; layerVal = 1; break;
+            case 'F': axis = 'z'; layerVal = 1; break;
+            case 'B': axis = 'z'; layerVal = -1; break;
+        }
+
+        if (face === 'U') angle = isPrime ? Math.PI / 2 : -Math.PI / 2;
+        if (face === 'D') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+        if (face === 'R') angle = isPrime ? Math.PI / 2 : -Math.PI / 2;
+        if (face === 'L') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+        if (face === 'F') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+        if (face === 'B') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+
+        const eps = 0.1;
+        const activeCubies = this.cubies.filter(c => Math.abs(c.position[axis] - layerVal) < eps);
+
+        const pivot = new THREE.Object3D();
+        pivot.rotation.set(0, 0, 0);
+        this.group.add(pivot);
+
+        activeCubies.forEach(c => {
+            this.group.remove(c);
+            pivot.add(c);
+        });
+
+        pivot.rotation[axis] = angle;
+        pivot.updateMatrixWorld();
+        activeCubies.forEach(c => {
+            c.updateMatrixWorld();
+            pivot.remove(c);
+            c.applyMatrix4(pivot.matrixWorld);
+            c.position.x = Math.round(c.position.x);
+            c.position.y = Math.round(c.position.y);
+            c.position.z = Math.round(c.position.z);
+            this.group.add(c);
+        });
+        this.group.remove(pivot);
+    }
+
+    applyMovesInstant(movesArray) {
+        if (!movesArray || !Array.isArray(movesArray)) return;
+        for (const m of movesArray) {
+            this.applyMoveInstant(m);
+        }
+    }
+
     setSpeed(val) {
         // val 1-10. 1 = slow (1000ms), 10 = fast (50ms)
         const min = 1000;
