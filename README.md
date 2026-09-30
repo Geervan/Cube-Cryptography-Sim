@@ -4,49 +4,49 @@ An interactive, physical group theory stream cipher and peer-to-peer secure mess
 
 ---
 
-## 🌟 Overview
+## Overview
 
 **Cube Cryptography** models cryptographic entropy through the $4.33 \times 10^{19}$ permutation state space of a Rubik's cube lattice. Unlike traditional linear feedback shift registers (LFSR), Project Cube constructs non-linear keystreams via physical 3D spatial rotations, Continuous Cipher Feedback (CFB), and discrete spatial sensor extraction.
 
 ---
 
-## 🎨 Built with Astryx Design System
+## Built with Astryx Design System
 
 The application is built on **Astryx** components and design tokens wrapped under a custom dark `neutralTheme`:
 
-* **💬 Chat System**: Built using `@astryxdesign/core/Chat` (`ChatMessageList`, `ChatMessage`, `ChatMessageBubble`, `ChatSystemMessage`, and `ChatSendButton`).
-* **🧭 Navigation & Layout**: `TopNav`, `TopNavItem`, `Divider`, `Theme`, and responsive drawer triggers with `IconButton`.
-* **🎛️ Form & Parameter Controls**: `TextInput`, `TextArea`, `CheckboxInput`, `Slider`, and `SegmentedControl`.
-* **📑 Progressive Disclosure & Feedback**: `TabList`, `Tab`, `CollapsibleGroup`, `Collapsible`, `Tooltip`, `Kbd`, `StatusDot`, `Dialog`, and `DialogHeader`.
-* **🎨 Design Tokens**: Complete color, radius, spacing, and typography token integration via `@astryxdesign/theme-neutral`.
+* **Chat System**: Built using `@astryxdesign/core/Chat` (`ChatMessageList`, `ChatMessage`, `ChatMessageBubble`, `ChatSystemMessage`, and `ChatSendButton`).
+* **Navigation & Layout**: `TopNav`, `TopNavItem`, `Divider`, `Theme`, and responsive drawer triggers with `IconButton`.
+* **Form & Parameter Controls**: `TextInput`, `TextArea`, `CheckboxInput`, `Slider`, and `SegmentedControl`.
+* **Progressive Disclosure & Feedback**: `TabList`, `Tab`, `CollapsibleGroup`, `Collapsible`, `Tooltip`, `Kbd`, `StatusDot`, `Dialog`, and `DialogHeader`.
+* **Design Tokens**: Complete color, radius, spacing, and typography token integration via `@astryxdesign/theme-neutral`.
 
 ---
 
-## 📱 Application Suite
+## Application Suite
 
-### 1. 🌐 Architectural Overview (`index.html`)
+### 1. Architectural Overview (`index.html`)
 * **Physical Permutation Engine**: Interactive group theory introduction.
-* **Live Centerpiece Visualizer**: Dual-mode (Encrypt/Decrypt) synchronized telemetry stream displaying Plaintext $\to$ Keystream $\to$ Ciphertext in real-time.
+* **Live Centerpiece Visualizer**: Dual-mode (Encrypt/Decrypt) synchronized telemetry stream displaying Plaintext -> Keystream -> Ciphertext in real-time.
 * **Pipeline Walkthrough**: 4-stage interactive walkthrough powered by Astryx `TabList`.
 * **Theoretical Specification**: Mathematical breakdown with Astryx `CollapsibleGroup`.
 
-### 2. 🔬 Cryptographic Lab (`lab.html`)
+### 2. Cryptographic Lab (`lab.html`)
 * **3D Permutation Studio**: Full WebGL camera controls with real-time state hashing.
 * **Step-by-Step Operator**: Live algebraic readout inspecting `(Input ± Sensor ± StepConstant) % 53 = Output`.
 * **Speed & Animation Controls**: Real-time rotation speed adjustments via Astryx `Slider`.
 * **Research Guide**: Modal walkthrough powered by Astryx `Dialog`.
 
-### 3. 💬 P2P Secure Chat (`chat.html`)
+### 3. P2P Secure Chat (`chat.html`)
 * **Real-time WebRTC Mesh**: Serverless peer-to-peer transmission via PeerJS with global STUN/TURN fallback.
 * **Live 3D Lattice Encryption**: Outgoing messages mechanically rotate the sender's cube, transmitting the ciphertext stream; incoming messages physically rotate the receiver's cube during decryption.
 * **Channel Collision Detection**: Prevents state desynchronization with automatic alerts.
 
-### 4. 📜 Project Lore & Origins (`lore.html`)
+### 4. Project Lore & Origins (`lore.html`)
 * **Story Archive**: The origin story of the speedcubing accident, lost mouse incident, and the Eureka moment.
 
 ---
 
-## 📐 Mathematical Specification
+## Mathematical Specification
 
 ### 1. The Permutation Group
 The cipher machine operates over the Rubik’s permutation group $G = \langle U, D, L, R, F, B \rangle$. A shared secret seed permutes the initial baseline state across 43 quintillion possible configurations:
@@ -65,7 +65,7 @@ $$C_i = (P_i + K_i + RC_i) \pmod{53} \quad \Big| \quad P_i = (C_i - K_i - RC_i) 
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **UI Framework**: [React 19](https://react.dev/)
 * **Design System**: [@astryxdesign/core](https://astryx.atmeta.com/) & [@astryxdesign/theme-neutral](https://astryx.atmeta.com/)
@@ -75,7 +75,7 @@ $$C_i = (P_i + K_i + RC_i) \pmod{53} \quad \Big| \quad P_i = (C_i - K_i - RC_i) 
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Clone the Redesign Branch
 ```bash
@@ -101,6 +101,6 @@ npm run build
 
 ---
 
-## 👤 Author
+## Author
 
 * **Geervan** — [LinkedIn](https://www.linkedin.com/in/geervan/) • [GitHub](https://github.com/Geervan)
