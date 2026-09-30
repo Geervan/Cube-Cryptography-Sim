@@ -271,7 +271,7 @@ export function LandingApp() {
                     label="GitHub"
                     variant="secondary"
                     size="sm"
-                    onClick={() => window.open('https://github.com/Geervan/Cube-Cryptography-Sim', '_blank')}
+                    onClick={() => window.open('https://github.com/Geervan/Cube-Cryptography-Sim/tree/astryx-redesign', '_blank')}
                   />
                   <Button
                     label="Enter Lab"
@@ -677,7 +677,7 @@ export function LandingApp() {
                   label="View Source on GitHub"
                   variant="secondary"
                   size="md"
-                  onClick={() => window.open('https://github.com/Geervan/Cube-Cryptography-Sim', '_blank')}
+                  onClick={() => window.open('https://github.com/Geervan/Cube-Cryptography-Sim/tree/astryx-redesign', '_blank')}
                 />
               </div>
             </div>
