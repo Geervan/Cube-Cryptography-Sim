@@ -938,16 +938,11 @@ export function ChatApp() {
                 }}
                 width="100%"
               />
-              <Button
-                label={
-                  channelStatusText
-                    ? 'LOCKED'
-                    : 'SEND'
-                }
-                variant="secondary"
-                size="md"
-                onClick={handleSendMessage}
+              <ChatSendButton
                 isDisabled={connStatus !== 'CONNECTED' || isChannelBusy || !inputText.trim()}
+                isStopShown={isChannelBusy}
+                onSend={handleSendMessage}
+                size="md"
               />
             </div>
           </footer>
