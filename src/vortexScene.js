@@ -294,16 +294,16 @@ export class VortexCubeScene {
     const aspect = width / height;
 
     if (aspect < 0.65 || width < 520) {
-      // Mobile portrait: position cube a little lower (y = 0.58) so it's not jammed against the top header
-      this.targetScale = 0.48;
+      // Mobile portrait: position cube higher and slightly more compact so hero text & buttons fit comfortably
+      this.targetScale = 0.40;
       this.targetX = 0.0;
-      this.targetY = 0.58;
-      this.targetZ = -0.15;
+      this.targetY = 0.85;
+      this.targetZ = -0.20;
     } else if (aspect < 0.95 || width < 820) {
-      // Tablet / Phablet: moderate scale 0.60
-      this.targetScale = 0.60;
-      this.targetX = 0.05;
-      this.targetY = 0.42;
+      // Tablet / Phablet: moderate scale 0.55
+      this.targetScale = 0.55;
+      this.targetX = 0.04;
+      this.targetY = 0.50;
       this.targetZ = -0.25;
     } else {
       // Desktop: canonical prominent position on right side

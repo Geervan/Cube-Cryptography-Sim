@@ -29,7 +29,6 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Maximum impact single screen: strictly no scrollbar */
   background-color: var(--vortex-bg);
   color: var(--vortex-text-primary);
   font-family: var(--font-sans);
@@ -38,8 +37,9 @@ html, body {
 }
 
 .vortex-app-root {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
   background-color: var(--vortex-bg);
@@ -824,6 +824,23 @@ button.hud-close-btn[data-astryx-component="Button"]:hover {
 }
 
 @media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .vortex-app-root {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .vortex-header-inner {
     padding: 0 16px;
   }
@@ -836,42 +853,53 @@ button.hud-close-btn[data-astryx-component="Button"]:hover {
     display: flex;
   }
 
-  /* Full vertical scrolling container on mobile */
+  /* Vertical container on mobile with safe-area spacing */
   .vortex-hero-main {
-    height: 100vh;
+    height: auto;
     min-height: 100vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    align-items: flex-end;
+    min-height: 100dvh;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
   }
 
   .vortex-hero-inner {
-    min-height: 100%;
-    padding: 72px 18px 28px 18px;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 68px 18px calc(24px + env(safe-area-inset-bottom, 16px)) 18px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     align-items: flex-start;
+    box-sizing: border-box;
   }
 
-  /* Push editorial content below the lowered 3D cube */
+  /* Controlled clearance below the 3D cube */
   .hero-editorial-cluster {
     max-width: 100%;
-    margin-top: 25vh;
-    padding-top: 10px;
+    margin-top: 90px;
+    padding-top: 0;
+    z-index: 5;
+  }
+
+  .hero-category-tag {
+    margin-bottom: 8px;
+    font-size: 10px;
   }
 
   .hero-serif-title {
-    font-size: clamp(2.3rem, 9.2vw, 3.2rem);
-    line-height: 1.0;
-    margin-bottom: 12px;
+    font-size: clamp(2.0rem, 8.2vw, 2.8rem);
+    line-height: 1.02;
+    margin-bottom: 10px;
   }
 
   .hero-lead-text {
-    font-size: 0.95rem;
-    line-height: 1.55;
+    font-size: 0.90rem;
+    line-height: 1.5;
     max-width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
 
   .hero-cta-cluster {
@@ -880,7 +908,8 @@ button.hud-close-btn[data-astryx-component="Button"]:hover {
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
+    width: 100%;
   }
 
   .hero-primary-pill-btn {
@@ -890,12 +919,13 @@ button.hud-close-btn[data-astryx-component="Button"]:hover {
 
   .hero-secondary-play-btn {
     font-size: 13px;
+    padding: 6px 10px;
   }
 
   .hero-cipher-demo-hud {
     max-width: 100%;
-    margin-bottom: 20px;
-    padding-top: 12px;
+    margin-bottom: 16px;
+    padding-top: 10px;
   }
 
   .demo-hud-stream {
@@ -929,12 +959,59 @@ button.hud-close-btn[data-astryx-component="Button"]:hover {
     display: none;
   }
 
+  .vortex-hero-inner {
+    padding: 64px 16px calc(24px + env(safe-area-inset-bottom, 18px)) 16px;
+  }
+
   .hero-editorial-cluster {
-    margin-top: 34vh;
+    margin-top: 75px;
+  }
+
+  .hero-category-tag {
+    margin-bottom: 6px;
+    font-size: 9.5px;
   }
 
   .hero-serif-title {
-    font-size: clamp(2.1rem, 9.0vw, 2.7rem);
+    font-size: clamp(1.8rem, 7.8vw, 2.3rem);
+    line-height: 1.04;
+    margin-bottom: 8px;
+  }
+
+  .hero-lead-text {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    margin-bottom: 14px;
+  }
+
+  .hero-cta-cluster {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .hero-primary-pill-btn {
+    padding: 8px 12px 8px 16px;
+    font-size: 12.5px;
+    gap: 10px;
+  }
+
+  .hero-primary-pill-btn .btn-arrow-circle {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+  }
+
+  .hero-secondary-play-btn {
+    font-size: 12.5px;
+    gap: 10px;
+  }
+
+  .hero-secondary-play-btn .play-circle-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
   }
 
   .stream-type-tag {
