@@ -294,16 +294,16 @@ export class VortexCubeScene {
     const aspect = width / height;
 
     if (aspect < 0.65 || width < 520) {
-      // Mobile portrait: position cube higher and slightly more compact so hero text & buttons fit comfortably
-      this.targetScale = 0.40;
+      // Mobile portrait: visually centered in the hero viewport, aligned with the vortex core
+      this.targetScale = 0.44;
       this.targetX = 0.0;
-      this.targetY = 0.85;
-      this.targetZ = -0.20;
+      this.targetY = 0.12;
+      this.targetZ = -0.25;
     } else if (aspect < 0.95 || width < 820) {
-      // Tablet / Phablet: moderate scale 0.55
-      this.targetScale = 0.55;
-      this.targetX = 0.04;
-      this.targetY = 0.50;
+      // Tablet / Phablet: moderate scale, centered
+      this.targetScale = 0.58;
+      this.targetX = 0.0;
+      this.targetY = 0.10;
       this.targetZ = -0.25;
     } else {
       // Desktop: canonical prominent position on right side
@@ -320,10 +320,10 @@ export class VortexCubeScene {
     }
 
     if (this.glowSprite) {
-      this.glowSprite.position.y = this.targetY * 0.8;
+      this.glowSprite.position.set(this.targetX, this.targetY, -22);
     }
     if (this.coreLight) {
-      this.coreLight.position.y = this.targetY * 0.8;
+      this.coreLight.position.set(this.targetX, this.targetY, -22);
     }
   }
 
