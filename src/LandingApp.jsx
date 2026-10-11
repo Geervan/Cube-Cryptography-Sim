@@ -3,700 +3,491 @@ import '@astryxdesign/core/reset.css';
 import '@astryxdesign/core/astryx.css';
 import { Theme } from '@astryxdesign/core/theme';
 import { Button } from '@astryxdesign/core/Button';
-import { ButtonGroup } from '@astryxdesign/core/ButtonGroup';
-import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
+import { IconButton } from '@astryxdesign/core/IconButton';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
-import { TabList, Tab } from '@astryxdesign/core/TabList';
-import { Collapsible, CollapsibleGroup } from '@astryxdesign/core/Collapsible';
-import { Tooltip } from '@astryxdesign/core/Tooltip';
-import { TopNav, TopNavItem } from '@astryxdesign/core/TopNav';
 import { Kbd } from '@astryxdesign/core/Kbd';
-import { CubeSimulator } from './cube.js';
+import { TopNav } from '@astryxdesign/core/TopNav';
+import { VortexCubeScene } from './vortexScene.js';
 import { CubeCipherEngine } from './cipher_engine.js';
 import { neutralTheme } from './themes/neutral/neutralTheme';
 import './landing.css';
 
-const DEMO_PHRASE = "Geervan Welcomes you";
 const SEED_KEY = "CUBE_CIPHER_INIT";
+const TEST_PHRASE = "CIPHER";
 
 export function LandingApp() {
-  const cubeContainerRef = useRef(null);
-  const cubeRef = useRef(null);
+  const canvasContainerRef = useRef(null);
+  const vortexSceneRef = useRef(null);
   const engineRef = useRef(null);
-  const timerRef = useRef(null);
+  const demoAbortRef = useRef(false);
 
-  // Mode: 'ENCRYPT' | 'DECRYPT'
-  const [demoMode, setDemoMode] = useState('ENCRYPT');
-  
-  // Simulation State
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [status, setStatus] = useState('READY');
+  // Demo Phases: 'IDLE' | 'ENCRYPTING' | 'DECRYPTING' | 'COMPLETED'
+  const [demoPhase, setDemoPhase] = useState('IDLE');
+  const [activeCharIndex, setActiveCharIndex] = useState(-1);
+  const [activeMove, setActiveMove] = useState('-');
+  const [activeSensor, setActiveSensor] = useState('-');
   const [stateHash, setStateHash] = useState('000000000000');
-  const [sensorChar, setSensorChar] = useState('-');
-  const [lastMove, setLastMove] = useState('-');
+  
+  // Real cryptographic streams
+  const [cipherStream, setCipherStream] = useState([]);
+  const [recoveredStream, setRecoveredStream] = useState([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Stream Arrays
-  const [keystream, setKeystream] = useState([]);
-  const [outputStream, setOutputStream] = useState([]);
-
-  // Precomputed Ciphertext for Decrypt Demo
-  const [computedCiphertext, setComputedCiphertext] = useState("");
-
-  // Interactive Walkthrough Stage
-  const [activeStage, setActiveStage] = useState(0);
-
-  // Progressive Disclosure State
-  const [disclosures, setDisclosures] = useState({
-    sensor: true,
-    modulo: false,
-    cfb: false,
-  });
-
-  const toggleDisclosure = (key) => {
-    setDisclosures(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  // Pre-calculate full ciphertext once on mount for reference
+  // Initialize Three.js Vortex Scene
   useEffect(() => {
-    const stepConstants = CubeCipherEngine.generateStepConstants(SEED_KEY, 128);
-    // Simulation runner to compute reference ciphertext
-    const movesList = ['U', "U'", 'R', "R'", 'F', "F'"];
-    const toIdx = (c) => {
-      if (c === ' ') return 52;
-      const code = c.charCodeAt(0);
-      if (code >= 65 && code <= 90) return code - 65;
-      if (code >= 97 && code <= 122) return code - 97 + 26;
-      return 0;
-    };
-    const fromIdx = (i) => {
-      if (i === 52) return ' ';
-      if (i <= 25) return String.fromCharCode(i + 65);
-      return String.fromCharCode(i - 26 + 97);
-    };
+    if (canvasContainerRef.current && !vortexSceneRef.current) {
+      const scene = new VortexCubeScene(canvasContainerRef.current);
+      vortexSceneRef.current = scene;
 
-    // Deterministic simulation
-    let cipherOut = "";
-    let lastChar = 'A';
-    for (let i = 0; i < DEMO_PHRASE.length; i++) {
-      const p = toIdx(DEMO_PHRASE[i]);
-      const k = (p * 7 + i * 13 + 17) % 53; // Mock initial sensor before visualizer sync
-      const rc = stepConstants[i % stepConstants.length] || 0;
-      const c = (p + k + rc) % 53;
-      const cChar = fromIdx(c);
-      cipherOut += cChar;
-      lastChar = cChar;
-    }
-    setComputedCiphertext(cipherOut);
-  }, []);
-
-  // Initialize Three.js Cube and auto-start simulation
-  useEffect(() => {
-    if (cubeContainerRef.current && !cubeRef.current) {
-      const cube = new CubeSimulator('hero-cube-container');
-      cubeRef.current = cube;
-      const engine = new CubeCipherEngine(cube);
+      const engine = new CubeCipherEngine(scene);
       const stepConstants = CubeCipherEngine.generateStepConstants(SEED_KEY, 128);
       engine.setStepConstants(stepConstants);
       engineRef.current = engine;
 
-      cube.initCube(SEED_KEY);
-      setStateHash(cube.getStateHash());
+      scene.initCube(SEED_KEY);
+      setStateHash(scene.getStateHash());
 
-      // Auto-start demonstration after brief delay for visual setup
-      const autoStartTimer = setTimeout(() => {
-        setIsPlaying(true);
-      }, 700);
-
-      return () => clearTimeout(autoStartTimer);
+      return () => {
+        demoAbortRef.current = true;
+        scene.dispose();
+      };
     }
   }, []);
 
-  // Reset Simulation
-  const handleReset = useCallback((modeToSet) => {
-    setIsPlaying(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setCurrentIndex(0);
-    setKeystream([]);
-    setOutputStream([]);
-    setStatus('READY');
-    setSensorChar('-');
-    setLastMove('-');
-    if (cubeRef.current) {
-      cubeRef.current.initCube(SEED_KEY);
-      setStateHash(cubeRef.current.getStateHash());
-    }
-  }, []);
+  // Watch Demo action: Live character-by-character encryption then decryption
+  const handleWatchDemo = useCallback(() => {
+    if (!vortexSceneRef.current || !engineRef.current) return;
+    if (demoPhase === 'ENCRYPTING' || demoPhase === 'DECRYPTING') return;
 
-  // Switch Mode
-  const handleModeChange = (mode) => {
-    setDemoMode(mode);
-    handleReset(mode);
-    setTimeout(() => setIsPlaying(true), 200);
-  };
+    demoAbortRef.current = false;
+    const scene = vortexSceneRef.current;
+    const engine = engineRef.current;
 
-  // Step Execution (One Character Processed through the physical cube)
-  const processNextStep = useCallback(() => {
-    if (!cubeRef.current || !engineRef.current) return;
+    // Reset streams & state
+    setCipherStream([]);
+    setRecoveredStream([]);
+    setActiveCharIndex(0);
+    setActiveMove('-');
+    setActiveSensor('-');
+    setDemoPhase('ENCRYPTING');
 
-    const inputData = demoMode === 'ENCRYPT' ? DEMO_PHRASE : (computedCiphertext || DEMO_PHRASE);
-    if (currentIndex >= inputData.length) {
-      return;
-    }
+    // 1. Initialize cube to seed
+    scene.initCube(SEED_KEY);
+    setStateHash(scene.getStateHash());
 
-    setStatus('PROCESSING');
-    const prevChar = currentIndex === 0 ? 'A' : (demoMode === 'ENCRYPT' ? (outputStream[currentIndex - 1] || 'A') : (inputData[currentIndex - 1] || 'A'));
-    const move = engineRef.current.getCharMove(prevChar);
-    setLastMove(move);
+    let encryptedResult = [];
 
-    const char = inputData[currentIndex];
+    // --- ENCRYPTION CYCLE ---
+    const runEncryptChar = (idx) => {
+      if (demoAbortRef.current) return;
 
-    // Listen for completion of the mechanical rotation
-    cubeRef.current.onMoveComplete = () => {
-      const sensor = cubeRef.current.getSensorValue();
-      setSensorChar(sensor);
-      setStateHash(cubeRef.current.getStateHash());
+      if (idx >= TEST_PHRASE.length) {
+        // Encrypt phase finished! Brief transition, then begin decryption
+        setTimeout(() => {
+          if (demoAbortRef.current) return;
+          setDemoPhase('DECRYPTING');
+          setActiveCharIndex(0);
+          
+          // Re-initialize cube to identical seed for symmetric decryption
+          scene.initCube(SEED_KEY);
+          setStateHash(scene.getStateHash());
 
-      const k = engineRef.current.toIndex(sensor);
-      const rc = engineRef.current.getStepConstant(currentIndex);
+          setTimeout(() => {
+            runDecryptChar(0, encryptedResult);
+          }, 350);
+        }, 600);
+        return;
+      }
 
-      let outChar = '';
-      if (demoMode === 'ENCRYPT') {
-        const p = engineRef.current.toIndex(char);
+      setActiveCharIndex(idx);
+      const pChar = TEST_PHRASE[idx];
+      const prevChar = idx === 0 ? 'A' : (encryptedResult[idx - 1] || 'A');
+      const move = engine.getCharMove(prevChar);
+      setActiveMove(move);
+
+      scene.onMoveComplete = () => {
+        if (demoAbortRef.current) return;
+
+        const sensor = scene.getSensorValue();
+        setActiveSensor(sensor);
+        setStateHash(scene.getStateHash());
+
+        const k = engine.toIndex(sensor);
+        const p = engine.toIndex(pChar);
+        const rc = engine.getStepConstant(idx);
         const cVal = (p + k + rc) % 53;
-        outChar = engineRef.current.fromIndex(cVal);
-      } else {
-        const c = engineRef.current.toIndex(char);
+        const cChar = engine.fromIndex(cVal);
+
+        encryptedResult.push(cChar);
+        setCipherStream([...encryptedResult]);
+
+        setTimeout(() => {
+          runEncryptChar(idx + 1);
+        }, 220);
+      };
+
+      scene.queueMove(move);
+    };
+
+    // --- DECRYPTION CYCLE ---
+    const runDecryptChar = (idx, cipherChars) => {
+      if (demoAbortRef.current) return;
+
+      if (idx >= cipherChars.length) {
+        // Complete!
+        setDemoPhase('COMPLETED');
+        setActiveCharIndex(-1);
+        setActiveMove('-');
+        return;
+      }
+
+      setActiveCharIndex(idx);
+      const cChar = cipherChars[idx];
+      const prevChar = idx === 0 ? 'A' : (cipherChars[idx - 1] || 'A');
+      const move = engine.getCharMove(prevChar);
+      setActiveMove(move);
+
+      scene.onMoveComplete = () => {
+        if (demoAbortRef.current) return;
+
+        const sensor = scene.getSensorValue();
+        setActiveSensor(sensor);
+        setStateHash(scene.getStateHash());
+
+        const k = engine.toIndex(sensor);
+        const c = engine.toIndex(cChar);
+        const rc = engine.getStepConstant(idx);
+        
         let pVal = (c - k - rc) % 53;
         while (pVal < 0) pVal += 53;
-        outChar = engineRef.current.fromIndex(pVal);
-      }
+        const recoveredChar = engine.fromIndex(pVal);
 
-      setKeystream(prev => [...prev, sensor]);
-      setOutputStream(prev => {
-        const updated = [...prev, outChar];
-        if (demoMode === 'ENCRYPT' && updated.length === DEMO_PHRASE.length) {
-          setComputedCiphertext(updated.join(''));
-        }
-        return updated;
-      });
+        setRecoveredStream(prev => [...prev, recoveredChar]);
 
-      const nextIdx = currentIndex + 1;
-      setCurrentIndex(nextIdx);
+        setTimeout(() => {
+          runDecryptChar(idx + 1, cipherChars);
+        }, 220);
+      };
 
-      if (nextIdx >= inputData.length) {
-        setIsPlaying(false);
-        setStatus('COMPLETED');
-
-        // Automatic mode toggle loop: First Encrypt -> Then Decrypt -> Repeat
-        timerRef.current = setTimeout(() => {
-          if (demoMode === 'ENCRYPT') {
-            setDemoMode('DECRYPT');
-            handleReset('DECRYPT');
-            setTimeout(() => setIsPlaying(true), 300);
-          } else {
-            setDemoMode('ENCRYPT');
-            handleReset('ENCRYPT');
-            setTimeout(() => setIsPlaying(true), 300);
-          }
-        }, 2200);
-      }
+      scene.queueMove(move);
     };
 
-    // Execute Move in 3D WebGL
-    cubeRef.current.queueMove(move);
-  }, [currentIndex, demoMode, computedCiphertext, outputStream, handleReset]);
+    setTimeout(() => {
+      runEncryptChar(0);
+    }, 150);
 
-  // Playback Loop
-  useEffect(() => {
-    if (isPlaying) {
-      const inputData = demoMode === 'ENCRYPT' ? DEMO_PHRASE : (computedCiphertext || DEMO_PHRASE);
-      if (currentIndex < inputData.length) {
-        timerRef.current = setTimeout(() => {
-          processNextStep();
-        }, 500);
-      }
+  }, [demoPhase]);
+
+  // Dismiss / Close demo HUD
+  const handleCloseDemo = useCallback(() => {
+    demoAbortRef.current = true;
+    setDemoPhase('IDLE');
+    setActiveCharIndex(-1);
+    setActiveMove('-');
+    if (vortexSceneRef.current) {
+      vortexSceneRef.current.onMoveComplete = null;
+      setStateHash(vortexSceneRef.current.getStateHash());
     }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [isPlaying, currentIndex, processNextStep, demoMode, computedCiphertext]);
+  }, []);
 
-  const togglePlay = () => {
-    const inputData = demoMode === 'ENCRYPT' ? DEMO_PHRASE : (computedCiphertext || DEMO_PHRASE);
-    if (currentIndex >= inputData.length) {
-      handleReset(demoMode);
-      setTimeout(() => setIsPlaying(true), 100);
-    } else {
-      setIsPlaying(prev => !prev);
-    }
-  };
-
-  const activeInputStr = demoMode === 'ENCRYPT' ? DEMO_PHRASE : (computedCiphertext || DEMO_PHRASE);
+  const isDemoRunning = demoPhase === 'ENCRYPTING' || demoPhase === 'DECRYPTING';
 
   return (
     <Theme theme={neutralTheme} mode="dark">
-      <div className="cube-shell">
-        <div className="cube-grid-overlay"></div>
+      <div className="vortex-app-root">
+        
+        {/* Full-viewport Persistent 3D WebGL Canvas */}
+        <div 
+          className="vortex-canvas-container" 
+          id="vortex-canvas-stage" 
+          ref={canvasContainerRef} 
+        />
 
-        {/* 1. TOP NAVIGATION (ASTRYX TOPNAV PRIMITIVE) */}
-        <header className="cube-nav-header">
-          <div className="cube-nav-container">
+        {/* Ambient Grid Overlay */}
+        <div className="vortex-ambient-grid" />
+
+        {/* 1. TOP NAVIGATION (ASTRYX TOPNAV) */}
+        <header className="vortex-header">
+          <div className="vortex-header-inner">
             <TopNav
-              label="Main Navigation"
+              label="Main navigation"
               heading={
-                <a href="index.html" className="cube-brand">
-                  <div className="cube-brand-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                      <polyline points="2 17 12 22 22 17"></polyline>
-                      <polyline points="2 12 12 17 22 12"></polyline>
+                <a href="index.html" className="vortex-brand">
+                  <div className="vortex-brand-glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="20" height="20">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2" strokeLinejoin="round" />
+                      <polyline points="2 17 12 22 22 17" strokeLinejoin="round" />
+                      <polyline points="2 12 12 17 22 12" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <span className="cube-brand-name">Cube Cryptography</span>
-                  <span className="cube-version-badge">v1.2.0 CFB</span>
+                  <span className="vortex-brand-title">CUBE CRYPTOGRAPHY</span>
                 </a>
               }
-              centerContent={
-                <div className="cube-nav-menu">
-                  <TopNavItem label="Overview" href="index.html" isSelected />
-                  <TopNavItem label="Encryption Lab" href="lab.html" />
-                  <TopNavItem label="P2P Secure Chat" href="chat.html" />
-                  <TopNavItem label="Lore & Specs" href="lore.html" />
-                </div>
-              }
               endContent={
-                <div className="cube-nav-right">
-                  <Button
-                    label="GitHub"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => window.open('https://github.com/Geervan/Cube-Cryptography-Sim/tree/astryx-redesign', '_blank')}
-                  />
-                  <Button
-                    label="Enter Lab"
-                    variant="primary"
-                    size="sm"
-                    onClick={() => window.location.href = 'lab.html'}
-                  />
+                <div className="vortex-nav-right-cluster">
+                  <div className="vortex-nav-links">
+                    <a href="lab.html" className="vortex-nav-link">Lab</a>
+                    <a href="chat.html" className="vortex-nav-link">Chat</a>
+                    <a href="lore.html" className="vortex-nav-link">Lore</a>
+                    <a href="geervan.html" className="vortex-nav-link">Geervan</a>
+                  </div>
+
+                  <div className="vortex-desktop-cta-btn">
+                    <Button
+                      label="Get Started →"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => window.location.href = 'lab.html'}
+                    />
+                  </div>
+
+                  {/* Mobile Hamburger Menu Toggle */}
+                  <button
+                    type="button"
+                    className="vortex-mobile-menu-toggle"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    aria-label="Toggle navigation menu"
+                  >
+                    {mobileMenuOpen ? (
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round" />
+                        <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="4" y1="7" x2="20" y2="7" strokeLinecap="round" />
+                        <line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round" />
+                        <line x1="4" y1="17" x2="20" y2="17" strokeLinecap="round" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               }
             />
+
+            {/* Mobile Navigation Dropdown Sheet */}
+            {mobileMenuOpen && (
+              <div className="vortex-mobile-menu-drawer">
+                <a href="lab.html" className="vortex-mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                  <span>Lab</span>
+                  <span className="mobile-nav-arrow">→</span>
+                </a>
+                <a href="chat.html" className="vortex-mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                  <span>Chat</span>
+                  <span className="mobile-nav-arrow">→</span>
+                </a>
+                <a href="lore.html" className="vortex-mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                  <span>Lore</span>
+                  <span className="mobile-nav-arrow">→</span>
+                </a>
+                <a href="geervan.html" className="vortex-mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                  <span>Geervan</span>
+                  <span className="mobile-nav-arrow">→</span>
+                </a>
+                <div className="vortex-mobile-cta-wrap">
+                  <Button
+                    label="Get Started →"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => window.location.href = 'lab.html'}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* 2. HERO: EDITORIAL COMPOSITION + LIVE ENGINE CENTERPIECE */}
-        <main>
-          <section className="cube-hero-section">
-            <div className="cube-hero-grid">
-              
-              {/* Left Column: Brief, Principles & Action Trigger */}
-              <div className="cube-hero-left">
-                <div className="hero-tagline-badge">
-                  PHYSICAL PERMUTATION ENGINE
-                </div>
-
-                <h1 className="cube-hero-title">
-                  Group Theory as a Cryptographic Machine
-                </h1>
-
-                <div className="cube-hero-subtitle">
-                  A mechanical stream cipher built on 3D lattice state machines, continuous cipher feedback, and discrete spatial sampling.
-                </div>
-
-                <p className="cube-hero-description">
-                  Project Cube models cryptographic entropy through the 4.33 &times; 10¹⁹ state space of a Rubik’s permutation lattice. Every ciphertext character mechanically rotates the cube, producing an evolving, non-linear keystream.
-                </p>
-
-                {/* Hero Actions (Astryx Buttons) */}
-                <div className="cube-hero-actions">
-                  <Button
-                    label="Launch Encryption Lab →"
-                    variant="primary"
-                    size="md"
-                    onClick={() => window.location.href = 'lab.html'}
-                  />
-                  <Button
-                    label="Explore Mathematics"
-                    variant="secondary"
-                    size="md"
-                    onClick={() => {
-                      const el = document.getElementById('walkthrough');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                  />
-                </div>
+        {/* 2. HERO VIEWPORT (SINGLE FULLSCREEN IMPACT VIEW) */}
+        <main className="vortex-hero-main">
+          <div className="vortex-hero-inner">
+            
+            {/* Left Hero Composition */}
+            <div className="hero-editorial-cluster">
+              <div className="hero-category-tag">
+                <span className="tag-index">03 /</span>
+                <span className="tag-name">IMMERSIVE / EXPERIMENTAL</span>
               </div>
 
-              {/* Right Column: Live Interactive Cryptographic Engine Demonstration */}
-              <div className="live-demo-panel">
-                <div className="demo-top-bar">
-                  <div className="demo-title-cluster">
-                    <span className="demo-title-text">Live Cipher Demonstration</span>
-                    <Tooltip
-                      content={
-                        status === 'PROCESSING' 
-                          ? (demoMode === 'ENCRYPT' ? 'Active CFB character stream encryption' : 'Active CFB character stream decryption')
-                          : (status === 'COMPLETED' ? 'Lattice synchronized with message stream' : 'Engine ready')
-                      }
-                      placement="above"
-                    >
-                      <div className={`cube-status-pill cube-status-pill-${status === 'PROCESSING' ? (demoMode === 'ENCRYPT' ? 'warning' : 'info') : (status === 'COMPLETED' ? 'success' : 'neutral')}`}>
-                        <StatusDot
-                          variant={status === 'PROCESSING' ? (demoMode === 'ENCRYPT' ? 'warning' : 'accent') : (status === 'COMPLETED' ? 'success' : 'neutral')}
-                          isPulsing={status === 'PROCESSING'}
-                          label={status === 'PROCESSING' ? (demoMode === 'ENCRYPT' ? 'ENCRYPTING' : 'DECRYPTING') : (status === 'COMPLETED' ? 'SYNCED' : 'IDLE')}
-                        />
-                        <span>
-                          {status === 'PROCESSING' 
-                            ? (demoMode === 'ENCRYPT' ? 'ENCRYPTING' : 'DECRYPTING')
-                            : (status === 'COMPLETED' ? 'SYNCED' : 'IDLE')}
-                        </span>
-                      </div>
-                    </Tooltip>
-                  </div>
+              <h1 className="hero-serif-title">
+                More<br />
+                than<br />
+                a puzzle.
+              </h1>
 
-                  {/* Astryx SegmentedControl for Mode Switching */}
-                  <SegmentedControl
-                    value={demoMode}
-                    onChange={handleModeChange}
-                    label="Cipher mode"
-                    size="sm"
-                  >
-                    <SegmentedControlItem value="ENCRYPT" label="ENCRYPT" />
-                    <SegmentedControlItem value="DECRYPT" label="DECRYPT" />
-                  </SegmentedControl>
-                </div>
-
-                {/* 3D WebGL Canvas Centerpiece */}
-                <div className="demo-viewport-stage" id="hero-cube-container" ref={cubeContainerRef}>
-                  <div className="demo-hud-overlay">
-                    <Tooltip content="Sensor reads cubie identity at Front-Top-Right coordinate (1, 1, 1)" placement="right">
-                      <span className="hud-tag">SENSOR (1,1,1): {sensorChar}</span>
-                    </Tooltip>
-                    <Tooltip content="3D mechanical rotation move generated by cipher feedback" placement="right">
-                      <span className="hud-tag">LAST MOVE: {lastMove && lastMove !== '-' ? <Kbd keys={lastMove} /> : '-'}</span>
-                    </Tooltip>
-                  </div>
-                </div>
-
-                {/* Live Telemetry Streams (Input -> Keystream -> Output) */}
-                <div className="demo-telemetry-console">
-                  {/* Stream 1: Input */}
-                  <div className="stream-row">
-                    <span className="stream-label">{demoMode === 'ENCRYPT' ? 'PLAINTEXT' : 'CIPHERTEXT'}</span>
-                    <div className="stream-track">
-                      {activeInputStr.split('').map((ch, idx) => (
-                        <span
-                          key={idx}
-                          className={`char-cell ${idx === currentIndex ? 'active' : (idx < currentIndex ? 'completed' : '')}`}
-                        >
-                          {ch === ' ' ? '␣' : ch}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stream 2: Keystream */}
-                  <div className="stream-row">
-                    <span className="stream-label">KEYSTREAM</span>
-                    <div className="stream-track">
-                      {activeInputStr.split('').map((_, idx) => (
-                        <span
-                          key={idx}
-                          className={`char-cell ${idx === currentIndex ? 'active' : ''}`}
-                          style={{ color: 'var(--cube-accent-cyan)' }}
-                        >
-                          {keystream[idx] ? keystream[idx] : '•'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stream 3: Output */}
-                  <div className="stream-row">
-                    <span className="stream-label">{demoMode === 'ENCRYPT' ? 'CIPHERTEXT' : 'RECOVERED'}</span>
-                    <div className="stream-track">
-                      {activeInputStr.split('').map((_, idx) => (
-                        <span
-                          key={idx}
-                          className={`char-cell ${idx === currentIndex ? 'active' : (outputStream[idx] ? 'completed' : '')}`}
-                          style={{ color: 'var(--cube-accent-green)', fontWeight: 600 }}
-                        >
-                          {outputStream[idx] ? (outputStream[idx] === ' ' ? '␣' : outputStream[idx]) : '-'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Demonstration Action Controls (Astryx Buttons) */}
-                <div className="demo-controls-bar">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Button
-                      label={isPlaying ? "Pause" : (currentIndex >= activeInputStr.length ? "Replay" : "Play")}
-                      variant="primary"
-                      size="sm"
-                      onClick={togglePlay}
-                    />
-                    <Button
-                      label="Step →"
-                      variant="secondary"
-                      size="sm"
-                      onClick={processNextStep}
-                      isDisabled={isPlaying || currentIndex >= activeInputStr.length}
-                    />
-                    <Button
-                      label="Reset"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleReset(demoMode)}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--cube-text-muted)', letterSpacing: '0.04em' }}>
-                      CHAR {currentIndex} / {activeInputStr.length}
-                    </span>
-                    <Tooltip content="SHA-256 state hash of the internal 3D lattice configuration" placement="above">
-                      <div className="cube-hash-pill">
-                        <span className="cube-hash-label">HASH</span>
-                        <span className="cube-hash-code">{stateHash.slice(0, 8)}</span>
-                      </div>
-                    </Tooltip>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-          </section>
-
-          {/* 3. TECHNICAL SPECIFICATIONS STRIP */}
-          <section className="cube-facts-section">
-            <div className="cube-facts-strip">
-              <div className="fact-item">
-                <span className="fact-label">STATE SPACE</span>
-                <span className="fact-value">4.33 &times; 10¹⁹</span>
-              </div>
-              <div className="fact-item">
-                <span className="fact-label">CIPHER</span>
-                <span className="fact-value">Mod 53 [A–Za–z ]</span>
-              </div>
-              <div className="fact-item">
-                <span className="fact-label">LATTICE SENSOR</span>
-                <span className="fact-value">(1, 1, 1) FTR</span>
-              </div>
-              <div className="fact-item">
-                <span className="fact-label">P2P TRANSPORT</span>
-                <span className="fact-value">WebRTC Mesh</span>
-              </div>
-            </div>
-          </section>
-
-          {/* 4. SECTION 2: "HOW THE CUBE THINKS" (ASTRYX TABLIST & TAB WALKTHROUGH) */}
-          <section className="cube-walkthrough-section" id="walkthrough">
-            <div className="section-lead-header">
-              <div className="section-mini-tag">// ARCHITECTURAL PIPELINE</div>
-              <h2 className="section-title">How The Cube Thinks</h2>
-            </div>
-
-            <div className="walkthrough-container">
-              {/* Top Tab Bar via Astryx TabList */}
-              <div className="walkthrough-tabs-header">
-                <TabList
-                  value={String(activeStage)}
-                  onChange={(val) => setActiveStage(Number(val))}
-                  aria-label="Cryptographic pipeline stages"
-                  hasDivider
-                  size="md"
-                >
-                  <Tab value="0" label="01 · LATTICE STATE" />
-                  <Tab value="1" label="02 · SENSOR EXTRACTION" />
-                  <Tab value="2" label="03 · CFB ROTATION" />
-                  <Tab value="3" label="04 · MOD-53 STREAM" />
-                </TabList>
-              </div>
-
-              {/* Stage Display View */}
-              <div className="walkthrough-stage-view">
-                {activeStage === 0 && (
-                  <>
-                    <div className="stage-badge">STAGE 01 &bull; LATTICE ENGINE</div>
-                    <div className="stage-headline">Physical 3D Group Theory as an Entropy Machine</div>
-                    <p className="stage-explanation">
-                      The cipher machine operates over the Rubik’s permutation group G = &lang;U, D, L, R, F, B&rang;. A user's shared secret seeds the lattice into an initial non-linear baseline permutation of 43,252,003,274,489,856,000 distinct configurations.
-                    </p>
-                    <div className="stage-technical-callout">
-                      <span>LATTICE INVARIANT:</span>
-                      <span className="callout-code">Lattice_0 = Permute_Seed(Key_String) &isin; Group_Rubik</span>
-                    </div>
-                  </>
-                )}
-
-                {activeStage === 1 && (
-                  <>
-                    <div className="stage-badge">STAGE 02 &bull; SENSOR EXTRACTION</div>
-                    <div className="stage-headline">Discrete Spatial Sampling at Coordinate (1, 1, 1)</div>
-                    <p className="stage-explanation">
-                      Before each character is encoded, the engine reads the cubie piece situated at the Front-Top-Right (1, 1, 1) lattice coordinate. The identity index of this single piece provides the instantaneous stream key Kᵢ for that transformation cycle.
-                    </p>
-                    <div className="stage-technical-callout">
-                      <span>SENSOR SAMPLING FUNCTION:</span>
-                      <span className="callout-code">K_i = Lattice.ExtractPieceAt(x = 1, y = 1, z = 1)</span>
-                    </div>
-                  </>
-                )}
-
-                {activeStage === 2 && (
-                  <>
-                    <div className="stage-badge">STAGE 03 &bull; CIPHER FEEDBACK (CFB)</div>
-                    <div className="stage-headline">Mechanical Rotation Induced by Cipher Feedback</div>
-                    <p className="stage-explanation">
-                      Cipher Feedback mode ensures that the ciphertext of character <em>i</em> dictates the physical rotation move for step <em>i + 1</em>. The cube physically turns in 3D space, changing the sensor reading and ensuring that repeating letters (like "ee" in "Geervan") yield completely different cipher symbols.
-                    </p>
-                    <div className="stage-technical-callout">
-                      <span>CFB ROTATION INVARIANT:</span>
-                      <span className="callout-code">Move_(i+1) = MovesList[ Ascii(C_i) mod 6 ] &isin; &#123;U, U', R, R', F, F'&#125;</span>
-                    </div>
-                  </>
-                )}
-
-                {activeStage === 3 && (
-                  <>
-                    <div className="stage-badge">STAGE 04 &bull; OUTPUT GENERATION</div>
-                    <div className="stage-headline">Bijective Modulo-53 Character Mapping</div>
-                    <p className="stage-explanation">
-                      The plaintext character Pᵢ, instantaneous sensor key Kᵢ, and key-dependent round constant RCᵢ are algebraically combined over the 53-element alphabet space [A-Z, a-z, space].
-                    </p>
-                    <div className="stage-technical-callout">
-                      <span>ALGEBRAIC TRANSFORMATION:</span>
-                      <span className="callout-code">C_i = (P_i + K_i + RC_i) mod 53 &nbsp;|&nbsp; P_i = (C_i - K_i - RC_i) mod 53</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* 5. MATHEMATICS & PROGRESSIVE DISCLOSURE (ASTRYX COLLAPSIBLE GROUP) */}
-          <section className="cube-math-section">
-            <div className="math-editorial-box">
-              <div>
-                <div className="section-mini-tag">// THEORETICAL SPECIFICATION</div>
-                <h2 className="section-title" style={{ marginTop: '4px' }}>
-                  Geometric structure behind the cipher.
-                </h2>
-              </div>
-
-              <p className="math-editorial-lead">
-                Unlike traditional cryptographic stream ciphers relying on linear LFSR bit-shifts, Cube Cryptography constructs its state evolution within the non-abelian permutation group of a 3D lattice.
+              <p className="hero-lead-text">
+                An experimental project exploring how the spatial states of a Rubik’s Cube can be used to transform messages.
               </p>
 
-              <div className="math-disclosure-list">
-                <CollapsibleGroup hasDividers={false}>
-                  {/* Collapsible 1 */}
-                  <Collapsible
-                    trigger={
-                      <span className="math-trigger-label">
-                        01. Sensor Key Extraction (1, 1, 1)
-                      </span>
-                    }
-                    defaultIsOpen={true}
-                  >
-                    <div className="math-body">
-                      <p>
-                        The keystream sampler extracts the piece residing at the Front-Top-Right corner of the lattice. Because the CFB feedback moves (U, R, F) specifically intersect this corner, the sensor value changes deterministically with each step.
-                      </p>
-                      <div className="math-formula-box">
-                        Kᵢ = Lattice.Sample(x = 1, y = 1, z = 1) &isin; [0 .. 52]
-                      </div>
-                    </div>
-                  </Collapsible>
-
-                  {/* Collapsible 2 */}
-                  <Collapsible
-                    trigger={
-                      <span className="math-trigger-label">
-                        02. Modulo-53 Arithmetic
-                      </span>
-                    }
-                    defaultIsOpen={false}
-                  >
-                    <div className="math-body">
-                      <p>
-                        Characters [A-Z (0-25), a-z (26-51), space (52)] form a closed finite field. The round constants RCᵢ are derived during initialization using key expansion.
-                      </p>
-                      <div className="math-formula-box">
-                        Encryption: Cᵢ = (Pᵢ + Kᵢ + RCᵢ) mod 53<br />
-                        Decryption: Pᵢ = (Cᵢ - Kᵢ - RCᵢ) mod 53
-                      </div>
-                    </div>
-                  </Collapsible>
-
-                  {/* Collapsible 3 */}
-                  <Collapsible
-                    trigger={
-                      <span className="math-trigger-label">
-                        03. Cipher Feedback (CFB)
-                      </span>
-                    }
-                    defaultIsOpen={false}
-                  >
-                    <div className="math-body">
-                      <p>
-                        The generated ciphertext character Cᵢ determines the mechanical rotation move before processing index i + 1. This feedback guarantees that identical characters in a message yield completely different ciphertext characters.
-                      </p>
-                      <div className="math-formula-box">
-                        Move_{'{i+1}'} = f_mechanical(Cᵢ) &isin; &#123;U, U', R, R', F, F'&#125;
-                      </div>
-                    </div>
-                  </Collapsible>
-                </CollapsibleGroup>
-              </div>
-            </div>
-          </section>
-
-          {/* 6. FINAL CTA (ASTRYX BUTTONS) */}
-          <section className="cube-final-cta-section">
-            <div className="final-cta-banner">
-              <div>
-                <div className="cta-title">Ready to enter the machine?</div>
-                <div className="cta-sub">
-                  Inspect the physical lattice permutation engine in the live experimental lab.
-                </div>
-              </div>
-              <div className="final-cta-actions">
+              {/* Action Buttons */}
+              <div className="hero-cta-cluster">
+                {/* Primary Pill Button */}
                 <Button
-                  label="Launch Encryption Lab →"
+                  label="Explore the Project"
                   variant="primary"
-                  size="md"
+                  size="lg"
+                  className="hero-primary-pill-btn"
                   onClick={() => window.location.href = 'lab.html'}
+                  endContent={
+                    <span className="btn-arrow-circle" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" width="11" height="11">
+                        <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  }
                 />
-                <Button
-                  label="View Source on GitHub"
-                  variant="secondary"
-                  size="md"
-                  onClick={() => window.open('https://github.com/Geervan/Cube-Cryptography-Sim/tree/astryx-redesign', '_blank')}
-                />
+                
+                {/* Secondary Play Demo Button */}
+                <button
+                  type="button"
+                  className={`hero-secondary-play-btn ${isDemoRunning ? 'running' : ''}`}
+                  onClick={handleWatchDemo}
+                >
+                  <span className="play-circle-icon">
+                    {isDemoRunning ? (
+                      <span className="play-pulse-dot" />
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11">
+                        <polygon points="7 4 20 12 7 20 7 4" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="play-text">
+                    {demoPhase === 'ENCRYPTING' && `Encrypting...`}
+                    {demoPhase === 'DECRYPTING' && `Decrypting...`}
+                    {demoPhase === 'COMPLETED' && `Replay Demo`}
+                    {demoPhase === 'IDLE' && `Watch Demo`}
+                  </span>
+                </button>
               </div>
-            </div>
-          </section>
-        </main>
 
-        {/* Footer */}
-        <footer className="cube-footer">
-          <div className="footer-wrap">
-            <div>CUBE CRYPTOGRAPHY &bull; 3D LATTICE PERMUTATION CIPHER</div>
-            <div className="footer-nav-items">
-              <a href="lab.html">Lab</a>
-              <a href="chat.html">Secure Chat</a>
-              <a href="lore.html">Lore & Specs</a>
-              <a href="https://github.com/Geervan/Cube-Cryptography-Sim" target="_blank" rel="noopener noreferrer">GitHub</a>
-              <a href="https://www.linkedin.com/in/geervan" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              {/* Live Test Phrase Cryptographic Demonstration HUD */}
+              {(isDemoRunning || demoPhase === 'COMPLETED') ? (
+                <div className="hero-cipher-demo-hud">
+                  <div className="demo-hud-top">
+                    <div className="hud-phase-tag">
+                      <StatusDot 
+                        variant={demoPhase === 'ENCRYPTING' ? 'warning' : (demoPhase === 'DECRYPTING' ? 'accent' : 'success')} 
+                        isPulsing={isDemoRunning} 
+                      />
+                      <span className="hud-phase-name">
+                        {demoPhase === 'ENCRYPTING' && `ENCRYPTING PHRASE [${activeCharIndex + 1}/${TEST_PHRASE.length}]`}
+                        {demoPhase === 'DECRYPTING' && `DECRYPTING PHRASE [${activeCharIndex + 1}/${TEST_PHRASE.length}]`}
+                        {demoPhase === 'COMPLETED' && `BIJECTIVE REVERSIBILITY VERIFIED`}
+                      </span>
+                    </div>
+
+                    <div className="hud-top-right-group">
+                      <div className="hud-move-badge">
+                        <span className="hud-meta-label">MOVE:</span>
+                        {activeMove && activeMove !== '-' ? <Kbd keys={activeMove} /> : <span className="hud-code-idle">-</span>}
+                      </div>
+                      <IconButton 
+                        label="Close demo HUD"
+                        variant="ghost"
+                        size="sm"
+                        className="hud-close-btn" 
+                        onClick={handleCloseDemo}
+                        icon={
+                          <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="3" y1="3" x2="13" y2="13" strokeLinecap="round" />
+                            <line x1="13" y1="3" x2="3" y2="13" strokeLinecap="round" />
+                          </svg>
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Character Transformation Stream */}
+                  <div className="demo-hud-stream">
+                    <div className="hud-stream-row">
+                      <span className="stream-type-tag">PLAINTEXT:</span>
+                      <div className="stream-char-pills">
+                        {TEST_PHRASE.split('').map((char, i) => (
+                          <span 
+                            key={i} 
+                            className={`hud-char-cell ${demoPhase === 'ENCRYPTING' && i === activeCharIndex ? 'current-active' : ''}`}
+                          >
+                            {char}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="hud-stream-row">
+                      <span className="stream-type-tag">CIPHERTEXT:</span>
+                      <div className="stream-char-pills">
+                        {TEST_PHRASE.split('').map((_, i) => (
+                          <span 
+                            key={i} 
+                            className={`hud-char-cell cipher ${cipherStream[i] ? 'generated' : ''} ${demoPhase === 'DECRYPTING' && i === activeCharIndex ? 'current-active' : ''}`}
+                          >
+                            {cipherStream[i] || '•'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {demoPhase === 'DECRYPTING' || demoPhase === 'COMPLETED' ? (
+                      <div className="hud-stream-row">
+                        <span className="stream-type-tag">RECOVERED:</span>
+                        <div className="stream-char-pills">
+                          {TEST_PHRASE.split('').map((_, i) => (
+                            <span 
+                              key={i} 
+                              className={`hud-char-cell recovered ${recoveredStream[i] ? 'restored' : ''}`}
+                            >
+                              {recoveredStream[i] || '•'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="demo-hud-footer">
+                    <span className="hud-formula-tag">Kᵢ = SENSOR(1,1,1): <strong>{activeSensor}</strong></span>
+                    <span className="hud-hash-tag">LATTICE HASH: <strong>{stateHash.slice(0, 8)}</strong></span>
+                  </div>
+                </div>
+              ) : (
+                /* Bottom Left Cryptographic Telemetry Line (when idle) */
+                <div className="hero-lattice-telemetry">
+                  <div className="telemetry-status-indicator">
+                    <StatusDot variant="success" isPulsing={false} />
+                    <span className="telemetry-status-text">4.33 × 10¹⁹ STATES</span>
+                  </div>
+                  <div className="telemetry-hairline-track">
+                    <div className="telemetry-hairline-fill" />
+                  </div>
+                  <div className="telemetry-meta-code">
+                    <span className="telemetry-hash-label">HASH</span>
+                    <span className="telemetry-hash-val">{stateHash.slice(0, 8)}</span>
+                  </div>
+                </div>
+              )}
+
             </div>
+
+            {/* Right Hero Metadata Caption */}
+            <div className="hero-meta-cluster">
+              <div className="hero-meta-label">
+                AN EXPERIMENTAL<br />
+                EXPLORATION OF<br />
+                SPATIAL CRYPTOGRAPHY.
+              </div>
+              <div className="hero-meta-divider" />
+            </div>
+
+            {/* Bottom Right Scroll / Enter Cue */}
+            <a href="lab.html" className="hero-scroll-cue">
+              <span className="scroll-text">ENTER LAB</span>
+              <div className="scroll-track-line">
+                <span className="scroll-dot" />
+              </div>
+            </a>
+
           </div>
-        </footer>
+        </main>
 
       </div>
     </Theme>

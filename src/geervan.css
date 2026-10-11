@@ -1,0 +1,259 @@
+/* ─────────────────────────────────────────────────────────────
+   GEERVAN CREATOR / SOCIALS PAGE STYLES
+   ───────────────────────────────────────────────────────────── */
+
+.geervan-page-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.geervan-main-view {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 100px 6vw 48px 6vw;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.geervan-content-card {
+  width: 100%;
+  max-width: 760px;
+  animation: fadeInCreator 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInCreator {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.geervan-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(52px, 7.5vw, 92px);
+  font-weight: 300;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  margin: 8px 0 16px 0;
+  color: #ffffff;
+}
+
+.geervan-role-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  margin-bottom: 24px;
+}
+
+.geervan-role-text {
+  color: #38bdf8;
+}
+
+.geervan-role-dot {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.geervan-role-meta {
+  color: var(--vortex-text-muted);
+}
+
+.geervan-bio-paragraph {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(226, 232, 240, 0.88);
+  margin: 0 0 36px 0;
+  max-width: 640px;
+}
+
+.geervan-bio-paragraph strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SOCIALS & PROFILES GRID (ASTRYX CARDS)
+   ───────────────────────────────────────────────────────────── */
+
+.geervan-socials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+@media (max-width: 860px) {
+  .geervan-socials-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.geervan-card-anchor {
+  text-decoration: none;
+  display: block;
+  color: inherit;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.geervan-card-anchor:hover {
+  transform: translateY(-3px);
+}
+
+/* Official Astryx Card Styling */
+.geervan-card-anchor [data-astryx-component="Card"],
+.geervan-card-anchor .astryx-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(11, 16, 26, 0.75) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 20px 22px !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.geervan-card-anchor:hover [data-astryx-component="Card"],
+.geervan-card-anchor:hover .astryx-card {
+  border-color: rgba(255, 255, 255, 0.32) !important;
+  background: rgba(17, 24, 39, 0.9) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+}
+
+.astryx-social-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.social-card-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.geervan-card-anchor:hover .social-card-icon-wrap {
+  transform: scale(1.06);
+}
+
+.social-card-icon-wrap.linkedin {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.22);
+}
+
+.social-card-icon-wrap.portfolio {
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.25);
+}
+
+.social-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.social-card-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.social-card-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.social-arrow {
+  font-size: 13px;
+  color: var(--vortex-text-muted);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.geervan-card-anchor:hover .social-arrow {
+  color: #ffffff;
+  transform: translate(2px, -2px);
+}
+
+.social-card-handle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--vortex-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Highlight card */
+.geervan-social-card.highlight-lab {
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.geervan-social-card.highlight-lab:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.15);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BOTTOM SPECS BAR
+   ───────────────────────────────────────────────────────────── */
+
+.geervan-specs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--vortex-text-secondary);
+}
+
+.geervan-spec-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.geervan-spec-dim {
+  color: var(--vortex-text-muted);
+}
+
+.geervan-spec-sep {
+  color: rgba(255, 255, 255, 0.12);
+}
+
+.active-link {
+  color: #38bdf8 !important;
+  font-weight: 600;
+}

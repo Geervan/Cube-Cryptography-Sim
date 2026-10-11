@@ -11,6 +11,7 @@ export default defineConfig({
                 lab: resolve(__dirname, 'lab.html'),
                 lore: resolve(__dirname, 'lore.html'),
                 chat: resolve(__dirname, 'chat.html'),
+                geervan: resolve(__dirname, 'geervan.html'),
             },
         },
     },
