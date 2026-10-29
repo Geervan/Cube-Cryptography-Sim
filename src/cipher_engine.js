@@ -100,7 +100,7 @@ export class CubeCipherEngine {
                 lastCipherChar = cChar;
 
                 // 4. GUI Callback
-                if (onProgress) onProgress(cChar, index, { p: pChar, k: sensorVal, c: cChar, rc: rc });
+                if (onProgress) onProgress(cChar, index, { p: pChar, k: sensorVal, c: cChar, rc: rc, move: move });
 
                 // 5. Next
                 index++;
@@ -149,7 +149,7 @@ export class CubeCipherEngine {
                 fullPlaintext += pChar;
                 lastCipherChar = cChar;
 
-                if (onProgress) onProgress(pChar, index, { p: pChar, k: sensorVal, c: cChar, rc: rc });
+                if (onProgress) onProgress(pChar, index, { p: pChar, k: sensorVal, c: cChar, rc: rc, move: move });
 
                 index++;
                 processNext();

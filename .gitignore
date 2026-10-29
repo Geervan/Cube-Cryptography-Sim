@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.zip
+cube_cryptography_design_assets/

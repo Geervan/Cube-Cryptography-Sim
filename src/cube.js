@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export class CubeSimulator {
     constructor(containerId) {
-        this.container = document.getElementById(containerId);
+        this.container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
         this.scene = new THREE.Scene();
 
         // Lab lighting
@@ -14,18 +14,23 @@ export class CubeSimulator {
         directionalLight.position.set(10, 20, 15);
         this.scene.add(directionalLight);
 
-        // Camera
-        this.camera = new THREE.PerspectiveCamera(45, this.container.clientWidth / this.container.clientHeight, 0.1, 100);
-        this.camera.position.set(6, 5, 8);
+        const width = this.container && this.container.clientWidth ? this.container.clientWidth : (window.innerWidth || 600);
+        const height = this.container && this.container.clientHeight ? this.container.clientHeight : (window.innerHeight || 400);
+
+        // Camera positioned further back for a sleek, compact size
+        this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+        this.camera.position.set(6.2, 5.2, 8.2);
         this.camera.lookAt(0, 0, 0);
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(width, height);
+        this.renderer.setPixelRatio(window.devicePixelRatio || 1);
         // Dark background matching CSS
         this.renderer.setClearColor(0x121214);
-        this.container.appendChild(this.renderer.domElement);
+        if (this.container) {
+            this.container.appendChild(this.renderer.domElement);
+        }
 
         // Controls
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -50,7 +55,8 @@ export class CubeSimulator {
         this.onMoveComplete = null;
 
         // Handling Resize
-        window.addEventListener('resize', this.onWindowResize.bind(this));
+        this.resizeHandler = this.onWindowResize.bind(this);
+        window.addEventListener('resize', this.resizeHandler);
 
         this.animate();
     }
@@ -66,10 +72,10 @@ export class CubeSimulator {
     }
 
     animateCameraToSensorView() {
-        // Target: Focus on Front-Top-Right corner (1, 1, 1) where sensor reads
-        const targetPosition = new THREE.Vector3(5, 4, 6);
+        // Target: Focus smoothly on Front-Top-Right corner with subtle framing (no aggressive enlargement)
+        const targetPosition = new THREE.Vector3(5.8, 4.8, 7.6);
         const startPosition = this.camera.position.clone();
-        const duration = 800; // ms
+        const duration = 600; // ms
         const startTime = Date.now();
 
         const animateCamera = () => {
@@ -439,6 +445,64 @@ export class CubeSimulator {
         tick();
     }
 
+    applyMoveInstant(moveStr) {
+        if (!moveStr) return;
+        let axis = '';
+        let layerVal = 0;
+        let angle = -Math.PI / 2;
+
+        const face = moveStr[0];
+        const isPrime = moveStr.includes("'");
+
+        switch (face) {
+            case 'U': axis = 'y'; layerVal = 1; break;
+            case 'D': axis = 'y'; layerVal = -1; break;
+            case 'L': axis = 'x'; layerVal = -1; break;
+            case 'R': axis = 'x'; layerVal = 1; break;
+            case 'F': axis = 'z'; layerVal = 1; break;
+            case 'B': axis = 'z'; layerVal = -1; break;
+        }
+
+        if (face === 'U') angle = isPrime ? Math.PI / 2 : -Math.PI / 2;
+        if (face === 'D') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+        if (face === 'R') angle = isPrime ? Math.PI / 2 : -Math.PI / 2;
+        if (face === 'L') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+        if (face === 'F') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+        if (face === 'B') angle = isPrime ? -Math.PI / 2 : Math.PI / 2;
+
+        const eps = 0.1;
+        const activeCubies = this.cubies.filter(c => Math.abs(c.position[axis] - layerVal) < eps);
+
+        const pivot = new THREE.Object3D();
+        pivot.rotation.set(0, 0, 0);
+        this.group.add(pivot);
+
+        activeCubies.forEach(c => {
+            this.group.remove(c);
+            pivot.add(c);
+        });
+
+        pivot.rotation[axis] = angle;
+        pivot.updateMatrixWorld();
+        activeCubies.forEach(c => {
+            c.updateMatrixWorld();
+            pivot.remove(c);
+            c.applyMatrix4(pivot.matrixWorld);
+            c.position.x = Math.round(c.position.x);
+            c.position.y = Math.round(c.position.y);
+            c.position.z = Math.round(c.position.z);
+            this.group.add(c);
+        });
+        this.group.remove(pivot);
+    }
+
+    applyMovesInstant(movesArray) {
+        if (!movesArray || !Array.isArray(movesArray)) return;
+        for (const m of movesArray) {
+            this.applyMoveInstant(m);
+        }
+    }
+
     setSpeed(val) {
         // val 1-10. 1 = slow (1000ms), 10 = fast (50ms)
         const min = 1000;
@@ -462,14 +526,36 @@ export class CubeSimulator {
 
     onWindowResize() {
         if (!this.container) return;
-        this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+        const width = this.container.clientWidth || 600;
+        const height = this.container.clientHeight || 400;
+        this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+        this.renderer.setSize(width, height);
     }
 
     animate() {
-        requestAnimationFrame(this.animate.bind(this));
-        this.controls.update();
-        this.renderer.render(this.scene, this.camera);
+        this.animationFrameId = requestAnimationFrame(this.animate.bind(this));
+        if (this.controls) this.controls.update();
+        if (this.renderer && this.scene && this.camera) {
+            this.renderer.render(this.scene, this.camera);
+        }
+    }
+
+    destroy() {
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+        }
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+        }
+        if (this.controls) {
+            this.controls.dispose();
+        }
+        if (this.renderer) {
+            if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+            }
+            this.renderer.dispose();
+        }
     }
 }

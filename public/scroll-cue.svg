@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 120" fill="none" stroke="#F3F1ED" stroke-width="1.4">
+  <text x="45" y="15" fill="#F3F1ED" stroke="none" font-family="Arial,sans-serif" font-size="9" letter-spacing="2" text-anchor="middle">SCROLL</text>
+  <path d="M45 35v48m-6-7 6 7 6-7"/>
+  <circle cx="45" cy="101" r="4"/>
+</svg>
